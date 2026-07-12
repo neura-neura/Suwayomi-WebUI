@@ -28,6 +28,7 @@ import type { ParallelReaderSideSelection } from '@/features/parallel-reader/typ
 import { getErrorMessage } from '@/lib/HelperFunctions.ts';
 import { STABLE_EMPTY_ARRAY } from '@/base/Base.constants.ts';
 import { GET_SOURCES_BASE } from '@/lib/graphql/source/SourceQuery.ts';
+import { fetchParallelReaderManga } from '@/features/parallel-reader/services/ParallelReaderCompatibility.ts';
 
 type ParallelReaderSourcesQuery = {
     sources: {
@@ -100,7 +101,10 @@ export const ParallelChapterSelector = ({ label, selection, onChange }: Parallel
         setIsRefreshingManga(true);
 
         try {
-            await requestManager.refreshManga(manga.id).response;
+            if (!manga.initialized) {
+                await fetchParallelReaderManga(manga.id);
+                await chaptersResponse.refetch();
+            }
         } catch (error) {
             setRefreshError(getErrorMessage(error));
         } finally {

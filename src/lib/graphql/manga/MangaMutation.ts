@@ -7,8 +7,26 @@
  */
 
 import gql from 'graphql-tag';
-import { MANGA_META_FIELDS, MANGA_SCREEN_FIELDS } from '@/lib/graphql/manga/MangaFragments.ts';
-import { CHAPTER_LIST_FIELDS } from '@/lib/graphql/chapter/ChapterFragments.ts';
+import { MANGA_BASE_FIELDS, MANGA_META_FIELDS, MANGA_SCREEN_FIELDS } from '@/lib/graphql/manga/MangaFragments.ts';
+import { CHAPTER_LIST_FIELDS, CHAPTER_READER_FIELDS } from '@/lib/graphql/chapter/ChapterFragments.ts';
+
+export const FETCH_PARALLEL_READER_MANGA = gql`
+    ${MANGA_BASE_FIELDS}
+    ${CHAPTER_READER_FIELDS}
+
+    mutation FETCH_PARALLEL_READER_MANGA($mangaId: Int!) {
+        fetchManga(input: { id: $mangaId }) {
+            manga {
+                ...MANGA_BASE_FIELDS
+            }
+        }
+        fetchChapters(input: { mangaId: $mangaId }) {
+            chapters {
+                ...CHAPTER_READER_FIELDS
+            }
+        }
+    }
+`;
 
 // makes the server fetch and return the manga
 export const REFRESH_MANGA = gql`
