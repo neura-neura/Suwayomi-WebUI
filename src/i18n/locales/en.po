@@ -408,10 +408,6 @@ msgstr "Add bookmark"
 msgid "Add extension store"
 msgstr "Add extension store"
 
-#: src/features/parallel-reader/components/PageAnchorEditor.tsx
-msgid "Add offset"
-msgstr "Add offset"
-
 #: src/features/manga/components/details/MangaDetails.tsx
 #: src/features/manga/components/MangaBadges.tsx
 #: src/features/reader/overlay/navigation/components/ReaderLibraryButton.tsx
@@ -425,6 +421,10 @@ msgstr "Add tracking"
 #: src/features/manga/hooks/useManageMangaLibraryState.tsx
 msgid "Added manga to library!"
 msgstr "Added manga to library!"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Adjust alignment"
+msgstr "Adjust alignment"
 
 #: src/features/library/screens/LibrarySettings.tsx
 msgid "Advanced"
@@ -441,6 +441,18 @@ msgstr "After changing this setting go to the \"About\" page and check for a web
 #: src/features/extension/info/components/Meta.tsx
 msgid "Age rating"
 msgstr "Age rating"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Align from Reader A"
+msgstr "Align from Reader A"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Align from Reader B"
+msgstr "Align from Reader B"
+
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
+msgid "Align this scene"
+msgstr "Align this scene"
 
 #: src/features/backup/Backup.utils.ts
 #: src/features/category/components/CategoriesInclusionSetting.tsx
@@ -471,6 +483,10 @@ msgstr "Also remove from {0}"
 #: src/features/settings/screens/Settings.tsx
 msgid "Appearance"
 msgstr "Appearance"
+
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Apply"
+msgstr "Apply"
 
 #: src/features/reader/settings/general/components/ReaderSettingSafeAreaInset.tsx
 msgid "Apply safe area padding"
@@ -760,6 +776,7 @@ msgstr "Can't migrate an entry to itself"
 #: src/features/category/components/CreateOrEditCategoryDialog.tsx
 #: src/features/migration/components/MigrationBulkSearchOptionsDialog.tsx
 #: src/features/migration/components/MigrationOptionsDialog.tsx
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 #: src/features/reader/hotkeys/settings/components/RecordHotkey.tsx
 #: src/features/settings/components/globalUpdate/GlobalUpdateSettingsEntries.tsx
 #: src/features/source/browse/components/SourceOptions.tsx
@@ -854,8 +871,8 @@ msgid "Chapter number"
 msgstr "Chapter number"
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Chapter percentage"
-msgstr "Chapter percentage"
+msgid "Chapter progress"
+msgstr "Chapter progress"
 
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Chapter sort order"
@@ -900,6 +917,10 @@ msgstr "Cleanup database"
 #: src/base/collection/components/SelectableCollectionSelectAll.tsx
 msgid "Clear"
 msgstr "Clear"
+
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Clear all page matches"
+msgstr "Clear all page matches"
 
 #: src/features/settings/screens/ImagesSettings.tsx
 msgid "Clear cache"
@@ -1389,8 +1410,8 @@ msgid "Delete finished chapters while reading"
 msgstr "Delete finished chapters while reading"
 
 #: src/features/parallel-reader/components/PageAnchorEditor.tsx
-msgid "Delete page link"
-msgstr "Delete page link"
+msgid "Delete page match"
+msgstr "Delete page match"
 
 #: src/features/source/browse/components/SourceOptions.tsx
 msgid "Delete search"
@@ -1878,6 +1899,10 @@ msgstr "Forget manga categories"
 msgid "Fourth to last read chapter"
 msgstr "Fourth to last read chapter"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "From this point, both readers will move by exactly the same scroll distance."
+msgstr "From this point, both readers will move by exactly the same scroll distance."
+
 #: src/features/library/screens/LibrarySettings.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "General"
@@ -1905,8 +1930,8 @@ msgid "Global update (last update: {date})"
 msgstr "Global update (last update: {date})"
 
 #: src/features/parallel-reader/components/PageAnchorEditor.tsx
-msgid "Go"
-msgstr "Go"
+msgid "Go to this match"
+msgstr "Go to this match"
 
 #: src/features/reader/settings/general/components/ReaderSettingBackgroundColor.tsx
 msgid "Gray"
@@ -1986,6 +2011,10 @@ msgstr "How many chapters should get downloaded while reading."
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "How much time FlareSolverr has to handle the request"
 msgstr "How much time FlareSolverr has to handle the request"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "How should the readers move together?"
+msgstr "How should the readers move together?"
 
 #: src/features/migration/components/MigrationBulkSearchOptionsDialog.tsx
 msgid ""
@@ -2082,6 +2111,10 @@ msgstr "Include: {includedSyncDataText}"
 msgid "Increase auto scroll speed"
 msgstr "Increase auto scroll speed"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Independent scrolling"
+msgstr "Independent scrolling"
+
 #: src/features/settings/screens/ServerSettings.tsx
 #: src/features/settings/screens/WebUISettings.tsx
 msgid "Inform about available update"
@@ -2106,10 +2139,6 @@ msgstr "Inform about version update"
 #: src/base/components/feedback/SnackbarWithDescription.tsx
 msgid "Information"
 msgstr "Information"
-
-#: src/features/parallel-reader/components/PageAnchorEditor.tsx
-msgid "Initial page offset"
-msgstr "Initial page offset"
 
 #: src/features/backup/component/BackupValidationDialog.tsx
 #: src/features/extension/Extensions.constants.ts
@@ -2329,10 +2358,6 @@ msgstr "Limit reader width"
 msgid "Limit the amount of new chapters that are going to get downloaded."
 msgstr "Limit the amount of new chapters that are going to get downloaded."
 
-#: src/features/parallel-reader/components/PageAnchorEditor.tsx
-msgid "Link current pages"
-msgstr "Link current pages"
-
 #: src/features/settings/screens/About.tsx
 msgid "Links"
 msgstr "Links"
@@ -2501,6 +2526,10 @@ msgstr "Match found"
 #: src/features/migration/components/migration-entry/MigrationEntry.tsx
 msgid "Matches"
 msgstr "Matches"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Matching pages"
+msgstr "Matching pages"
 
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Maximum log file size"
@@ -2883,17 +2912,18 @@ msgstr "Page {0}"
 msgid "Page {0} of {1}"
 msgstr "Page {0} of {1}"
 
-#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Page and progress"
-msgstr "Page and progress"
-
 #: src/features/reader/settings/layout/components/ReaderSettingPageGap.tsx
 msgid "Page gap"
 msgstr "Page gap"
 
+#. placeholder {0}: anchors.length
 #: src/features/parallel-reader/components/PageAnchorEditor.tsx
-msgid "Page links must be in range and increase on both sides."
-msgstr "Page links must be in range and increase on both sides."
+msgid "Page matches ({0})"
+msgstr "Page matches ({0})"
+
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Page matches must be in range and increase on both sides."
+msgstr "Page matches must be in range and increase on both sides."
 
 #: src/features/navigation-bar/NavigationBar.constants.ts
 #: src/features/parallel-reader/screens/ParallelReader.tsx
@@ -3024,6 +3054,14 @@ msgstr "Reader"
 msgid "Reader — Manga {mangaId} Chapter {chapterSourceOrder}"
 msgstr "Reader — Manga {mangaId} Chapter {chapterSourceOrder}"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Reader A"
+msgstr "Reader A"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Reader B"
+msgstr "Reader B"
+
 #: src/features/reader/settings/layout/components/ReaderSettingWidth.tsx
 msgid "Reader width"
 msgstr "Reader width"
@@ -3037,10 +3075,6 @@ msgstr "Reading direction"
 #: src/features/reader/settings/layout/components/ReaderSettingReadingMode.tsx
 msgid "Reading mode"
 msgstr "Reading mode"
-
-#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Recenter"
-msgstr "Recenter"
 
 #: src/features/library/components/LibraryOptionsPanel.tsx
 msgid "Recently added"
@@ -3127,10 +3161,6 @@ msgstr "Removed non library manga from categories"
 msgid "Reset"
 msgstr "Reset"
 
-#: src/features/parallel-reader/components/PageAnchorEditor.tsx
-msgid "Reset links"
-msgstr "Reset links"
-
 #: src/base/components/settings/DateSetting.tsx
 #: src/base/components/settings/NumberSetting.tsx
 #: src/base/components/settings/TimeSetting.tsx
@@ -3205,6 +3235,22 @@ msgstr "Right to left"
 msgid "Rosegold"
 msgstr "Rosegold"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Same movement from a point you choose"
+msgstr "Same movement from a point you choose"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Same page and position"
+msgstr "Same page and position"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Same relative progress"
+msgstr "Same relative progress"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Same scroll distance"
+msgstr "Same scroll distance"
+
 #: src/features/settings/screens/ImageProcessingSetting.tsx
 #: src/features/theme/components/CreateThemeDialog.tsx
 msgid "Save"
@@ -3213,6 +3259,10 @@ msgstr "Save"
 #: src/features/downloads/screens/DownloadSettings.tsx
 msgid "Save as CBZ archive"
 msgstr "Save as CBZ archive"
+
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Save current page match"
+msgstr "Save current page match"
 
 #: src/features/source/browse/components/SourceOptions.tsx
 msgid "Save current search"
@@ -3261,9 +3311,21 @@ msgstr "Scroll amount"
 msgid "Scroll backward"
 msgstr "Scroll backward"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Scroll either reader. The other one follows using the method you choose below."
+msgstr "Scroll either reader. The other one follows using the method you choose below."
+
 #: src/features/reader/hotkeys/settings/components/ReaderSettingHotkey.tsx
 msgid "Scroll forward"
 msgstr "Scroll forward"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Scroll together"
+msgstr "Scroll together"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Scrolling together"
+msgstr "Scrolling together"
 
 #: src/base/components/AppbarSearch.tsx
 #: src/features/migration/components/MigrationBulkSearchOptionsDialog.tsx
@@ -3671,6 +3733,10 @@ msgstr "Start sync"
 msgid "Started"
 msgstr "Started"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Starting page difference"
+msgstr "Starting page difference"
+
 #: src/features/reader/overlay/navigation/desktop/ReaderNavBarDesktop.tsx
 msgid "Static navigation"
 msgstr "Static navigation"
@@ -3714,8 +3780,8 @@ msgid "Successfully migrated manga"
 msgstr "Successfully migrated manga"
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Swap sides"
-msgstr "Swap sides"
+msgid "Swap readers"
+msgstr "Swap readers"
 
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Sync"
@@ -3736,10 +3802,6 @@ msgstr "Sync in progress"
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Sync interval"
 msgstr "Sync interval"
-
-#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Sync mode"
-msgstr "Sync mode"
 
 #: src/features/settings/Settings.constants.ts
 msgid "Sync started"
@@ -3763,8 +3825,12 @@ msgid "Sync will not be triggered if the progress difference is within this tole
 msgstr "Sync will not be triggered if the progress difference is within this tolerance."
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Synchronize scrolling"
-msgstr "Synchronize scrolling"
+msgid "Synchronization is paused. Move each reader independently until the same scene crosses the orange guide."
+msgstr "Synchronization is paused. Move each reader independently until the same scene crosses the orange guide."
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Synchronization method"
+msgstr "Synchronization method"
 
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "SyncYomi"
@@ -3801,6 +3867,10 @@ msgstr "Target mode"
 #: src/features/settings/Settings.constants.ts
 msgid "That haven't been started"
 msgstr "That haven't been started"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "That page match conflicts with an existing match. Edit the page matches below and try again."
+msgstr "That page match conflicts with an existing match. Edit the page matches below and try again."
 
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "The address of the FlareSolverr server"
@@ -3917,6 +3987,14 @@ msgstr "This icon will be shown on the system that is running the server"
 #: src/features/app-updates/components/VersionInfo.tsx
 msgid "This is the latest version"
 msgstr "This is the latest version"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "This saves the difference between the two current chapter positions."
+msgstr "This saves the difference between the two current chapter positions."
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "This saves the two current pages as a match for page synchronization."
+msgstr "This saves the two current pages as a match for page synchronization."
 
 #: src/features/source/browse/components/SourceOptions.tsx
 msgid "This will delete the saved search \"{savedSearch}\""
@@ -4178,6 +4256,10 @@ msgstr ""
 "Use a custom WebUI.\n"
 "To use a custom WebUI replace the content of the \"webUI\" directory in the root directory on the server with the files of the custom WebUI"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Use page matches when one edition has extra or missing pages. Each match marks pages that show the same content."
+msgstr "Use page matches when one edition has extra or missing pages. Each match marks pages that show the same content."
+
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Use SOCKS proxy"
 msgstr "Use SOCKS proxy"
@@ -4201,6 +4283,10 @@ msgstr "Use the latest released version."
 #: src/features/settings/Settings.constants.ts
 msgid "Use the version that was delivered with the server release"
 msgstr "Use the version that was delivered with the server release"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Use these positions"
+msgstr "Use these positions"
 
 #: src/base/components/modals/LoginDialog.tsx
 #: src/features/authentication/screens/LoginPage.tsx

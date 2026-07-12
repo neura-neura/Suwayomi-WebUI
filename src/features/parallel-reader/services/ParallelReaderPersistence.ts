@@ -23,9 +23,11 @@ export const DEFAULT_PARALLEL_READER_ALIGNMENT: ParallelReaderAlignmentState = {
     isSyncEnabled: true,
     leftPosition: { pageIndex: 0, progress: 0 },
     leftWidth: 50,
+    lockstepCalibrated: false,
+    percentageOffset: 0,
     rightPosition: { pageIndex: 0, progress: 0 },
     syncMode: 'page',
-    version: 1,
+    version: 2,
 };
 
 const getSelectionIdentity = ({ source, manga, chapter }: Required<ParallelReaderSideSelection>): string =>
@@ -71,8 +73,13 @@ export const sanitizeParallelReaderAlignment = (
         isSyncEnabled: typeof state.isSyncEnabled === 'boolean' ? state.isSyncEnabled : true,
         leftPosition: sanitizePosition(state.leftPosition, leftPageCount),
         leftWidth: coerceIn(typeof state.leftWidth === 'number' ? state.leftWidth : 50, 25, 75),
+        lockstepCalibrated: typeof state.lockstepCalibrated === 'boolean' ? state.lockstepCalibrated : false,
+        percentageOffset:
+            typeof state.percentageOffset === 'number' && Number.isFinite(state.percentageOffset)
+                ? coerceIn(state.percentageOffset, -1, 1)
+                : 0,
         rightPosition: sanitizePosition(state.rightPosition, rightPageCount),
-        syncMode: ['page', 'percentage'].includes(state.syncMode ?? '') ? state.syncMode! : 'page',
-        version: 1,
+        syncMode: ['page', 'percentage', 'lockstep'].includes(state.syncMode ?? '') ? state.syncMode! : 'page',
+        version: 2,
     };
 };

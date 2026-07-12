@@ -40,12 +40,17 @@ export type PageAnchor = {
     rightPage: number;
 };
 
+export type ParallelScrollSyncMode = 'page' | 'percentage' | 'lockstep';
+export type ParallelReaderSide = 'left' | 'right';
+
 export type ParallelReaderAlignmentState = {
     anchors: PageAnchor[];
     isSyncEnabled: boolean;
     leftPosition: ParallelPagePosition;
     leftWidth: number;
+    lockstepCalibrated: boolean;
+    percentageOffset: number;
     rightPosition: ParallelPagePosition;
-    syncMode: 'page' | 'percentage';
-    version: 1;
+    syncMode: ParallelScrollSyncMode;
+    version: 2;
 };

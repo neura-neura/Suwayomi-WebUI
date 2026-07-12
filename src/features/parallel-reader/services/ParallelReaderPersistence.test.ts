@@ -55,6 +55,50 @@ test('sanitizes persisted dimensions and positions', () => {
     assert.deepEqual(result.anchors, [{ leftPage: 2, rightPage: 3 }]);
     assert.equal(result.isSyncEnabled, false);
     assert.equal(result.syncMode, 'percentage');
+    assert.equal(result.version, 2);
+});
+
+test('restores calibrated lockstep synchronization', () => {
+    const result = sanitizeParallelReaderAlignment(
+        {
+            lockstepCalibrated: true,
+            syncMode: 'lockstep',
+            version: 2,
+        },
+        10,
+        10,
+    );
+
+    assert.equal(result.lockstepCalibrated, true);
+    assert.equal(result.syncMode, 'lockstep');
+    assert.equal(result.version, 2);
+});
+
+test('sanitizes persisted percentage offsets', () => {
+    assert.equal(sanitizeParallelReaderAlignment({ percentageOffset: 0.35 }, 10, 10).percentageOffset, 0.35);
+    assert.equal(sanitizeParallelReaderAlignment({ percentageOffset: 5 }, 10, 10).percentageOffset, 1);
+    assert.equal(sanitizeParallelReaderAlignment({ percentageOffset: -5 }, 10, 10).percentageOffset, -1);
+    assert.equal(
+        sanitizeParallelReaderAlignment({ percentageOffset: Number.POSITIVE_INFINITY }, 10, 10).percentageOffset,
+        0,
+    );
+    assert.equal(sanitizeParallelReaderAlignment({ percentageOffset: '0.5' }, 10, 10).percentageOffset, 0);
+});
+
+test('supplies version 2 calibration defaults for legacy alignment data', () => {
+    const result = sanitizeParallelReaderAlignment(
+        {
+            anchors: [{ leftPage: 2, rightPage: 3 }],
+            syncMode: 'page',
+            version: 1,
+        },
+        10,
+        10,
+    );
+
+    assert.equal(result.lockstepCalibrated, false);
+    assert.equal(result.percentageOffset, 0);
+    assert.equal(result.version, 2);
 });
 
 test('discards a contradictory persisted anchor map', () => {
