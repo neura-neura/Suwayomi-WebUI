@@ -70,6 +70,10 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 Fork development documentation for the side-by-side synchronized reader is available in
 [docs/PARALLEL_READER.md](./docs/PARALLEL_READER.md).
 
+Windows x64 users can install the fork together with Suwayomi-Server from one
+release executable. See the [Parallel Reader installer guide](./docs/PARALLEL_READER_INSTALLER.md)
+for installation, updates, checksums, uninstallation, and the release procedure.
+
 ## Translation
 
 Feel free to translate the project on [Weblate](https://hosted.weblate.org/projects/suwayomi/suwayomi-webui/)

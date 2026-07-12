@@ -1,0 +1,94 @@
+name: Build Parallel Reader installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Installer version without the leading v (for example, 1.0.0)
+        required: true
+        type: string
+      server_version:
+        description: Official Suwayomi-Server version to bundle
+        required: true
+        default: 2.3.2238
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parallel-reader-installer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-installer:
+    name: Build Windows x64 artifact
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      SERVER_VERSION: ${{ inputs.server_version }}
+      INSTALLER_OUTPUT: ${{ runner.temp }}\parallel-reader-installer
+
+    steps:
+      - name: Check out the selected revision
+        uses: actions/checkout@v4
+
+      - name: Validate release inputs
+        shell: powershell
+        run: |
+          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
+            throw "version must be a semantic version without a leading v"
+          }
+
+          if ($env:SERVER_VERSION -notmatch '^\d+\.\d+\.\d+$') {
+            throw "server_version must contain three numeric components"
+          }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable the repository pnpm version
+        shell: powershell
+        run: |
+          corepack enable
+          corepack install --global pnpm@11.1.2
+
+      - name: Verify 7-Zip packaging tool
+        shell: powershell
+        run: |
+          $sevenZipDirectory = Join-Path $env:ProgramFiles '7-Zip'
+          if (-not (Test-Path (Join-Path $sevenZipDirectory '7z.exe'))) {
+            throw '7z.exe is unavailable on this runner'
+          }
+          $sevenZipDirectory | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build the installer
+        shell: powershell
+        run: |
+          .\tools\scripts\buildParallelReaderInstaller.ps1 `
+            -Version $env:RELEASE_VERSION `
+            -ServerVersion $env:SERVER_VERSION `
+            -OutputDir $env:INSTALLER_OUTPUT
+
+      - name: Record build provenance
+        shell: powershell
+        run: |
+          @(
+            "commit=$env:GITHUB_SHA"
+            "ref=$env:GITHUB_REF"
+            "installerVersion=$env:RELEASE_VERSION"
+            "serverVersion=$env:SERVER_VERSION"
+            "runnerImage=$env:ImageOS-$env:ImageVersion"
+          ) | Set-Content -Path (Join-Path $env:INSTALLER_OUTPUT 'BUILD-PROVENANCE.txt')
+
+      - name: Upload installer for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: Suwayomi-Parallel-Reader-Setup-v${{ inputs.version }}-windows-x64
+          path: ${{ env.INSTALLER_OUTPUT }}\*
+          if-no-files-found: error
+          retention-days: 30

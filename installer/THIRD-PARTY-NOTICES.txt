@@ -1,0 +1,39 @@
+SUWAYOMI PARALLEL READER - THIRD-PARTY NOTICES
+================================================
+
+Suwayomi-WebUI and this fork
+-----------------------------
+Copyright (C) Contributors to the Suwayomi project and fork contributors.
+Licensed under the Mozilla Public License 2.0 (MPL-2.0).
+
+Source code:
+https://github.com/neura-neura/Suwayomi-WebUI
+
+The complete MPL-2.0 license text is included as LICENSE in the installer
+package and is available at https://www.mozilla.org/MPL/2.0/.
+
+The licenses and supplied license texts for JavaScript packages bundled into
+the production WebUI are included as WEBUI-DEPENDENCY-LICENSES.txt.
+
+Suwayomi-Server v2.3.2238
+-------------------------
+The installer package redistributes the unmodified official Windows x64 MSI
+published by the Suwayomi project. Suwayomi-Server is licensed under the
+Mozilla Public License 2.0 (MPL-2.0).
+
+Official release and corresponding source code:
+https://github.com/Suwayomi/Suwayomi-Server/releases/tag/v2.3.2238
+https://github.com/Suwayomi/Suwayomi-Server/tree/v2.3.2238
+
+Suwayomi and Tachiyomi are independent open-source projects. This fork and
+installer are not official releases of the Suwayomi project.
+
+7-Zip installer SFX module v26.02
+--------------------------------
+The outer setup executable includes the official 7-Zip installer SFX module.
+Most 7-Zip code is licensed under GNU LGPL, with parts under the BSD 3-clause
+license and an unRAR restriction. The full license and corresponding source
+are available from the official project:
+
+https://github.com/ip7z/7zip/releases/tag/26.02
+https://github.com/ip7z/7zip/tree/26.02
