@@ -67,6 +67,9 @@ _Make sure to set your Suwayomi-Server hostname in Settings or you'll get infini
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
+Fork development documentation for the side-by-side synchronized reader is available in
+[docs/PARALLEL_READER.md](./docs/PARALLEL_READER.md).
+
 ## Translation
 
 Feel free to translate the project on [Weblate](https://hosted.weblate.org/projects/suwayomi/suwayomi-webui/)
