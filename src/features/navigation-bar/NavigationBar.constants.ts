@@ -19,6 +19,7 @@ import GetAppOutlinedIcon from '@mui/icons-material/GetAppOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import SettingsIcon from '@mui/icons-material/Settings';
 import InfoIcon from '@mui/icons-material/Info';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useLingui } from '@lingui/react/macro';
 import { msg, plural } from '@lingui/core/macro';
 import type { NavbarItem } from '@/features/navigation-bar/NavigationBar.types.ts';
@@ -89,6 +90,14 @@ const NAVIGATION_BAR_BASE_ITEMS = [
 ] as const satisfies RestrictedNavBarItem<'both'>[];
 
 const NAVIGATION_BAR_DESKTOP_ITEMS = [
+    {
+        path: AppRoutes.parallelReader.path,
+        title: msg`Parallel Reader`,
+        SelectedIconComponent: CompareArrowsIcon,
+        IconComponent: CompareArrowsIcon,
+        show: 'desktop',
+        moreGroup: NavBarItemMoreGroup.GENERAL,
+    },
     {
         path: AppRoutes.downloads.path,
         title: msg`Downloads`,

@@ -65,6 +65,10 @@ const { ExtensionInfo } = loadable(
 );
 const { Updates } = loadable(() => import('@/features/updates/screens/Updates.tsx'), lazyLoadFallback);
 const { History } = loadable(() => import('@/features/history/screens/History.tsx'), lazyLoadFallback);
+const { ParallelReader } = loadable(
+    () => import('@/features/parallel-reader/screens/ParallelReader.tsx'),
+    lazyLoadFallback,
+);
 const { LibrarySettings } = loadable(() => import('@/features/library/screens/LibrarySettings.tsx'), lazyLoadFallback);
 const { DownloadSettings } = loadable(
     () => import('@/features/downloads/screens/DownloadSettings.tsx'),
@@ -366,6 +370,7 @@ const MainApp = () => {
                         <Route path={AppRoutes.library.match} element={<Library />} />
                         <Route path={AppRoutes.updates.match} element={<Updates />} />
                         {!hideHistory && <Route path={AppRoutes.history.match} element={<History />} />}
+                        <Route path={AppRoutes.parallelReader.match} element={<ParallelReader />} />
                         <Route path={AppRoutes.browse.match} element={<Browse />} />
                         <Route path={AppRoutes.browse.match} element={<Browse />} />
                         <Route path={AppRoutes.migrate.match}>

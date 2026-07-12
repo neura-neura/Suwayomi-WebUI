@@ -867,6 +867,10 @@ msgstr "Checking for update"
 msgid "Choose the order in which chapters are displayed."
 msgstr "Choose the order in which chapters are displayed."
 
+#: src/features/parallel-reader/screens/ParallelReader.tsx
+msgid "Choose two chapters to start reading in parallel."
+msgstr "Choose two chapters to start reading in parallel."
+
 #: src/features/library/screens/LibrarySettings.tsx
 msgid "Cleanup database"
 msgstr "Cleanup database"
@@ -2818,6 +2822,11 @@ msgstr "Page"
 #: src/features/reader/settings/layout/components/ReaderSettingPageGap.tsx
 msgid "Page gap"
 msgstr "Page gap"
+
+#: src/features/navigation-bar/NavigationBar.constants.ts
+#: src/features/parallel-reader/screens/ParallelReader.tsx
+msgid "Parallel Reader"
+msgstr "Parallel Reader"
 
 #: src/features/browse/screens/BrowseSettings.tsx
 msgid "Parallel source requests"

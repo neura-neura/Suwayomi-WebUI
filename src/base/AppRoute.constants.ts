@@ -198,6 +198,10 @@ export const AppRoutes = {
         match: 'history',
         path: '/history',
     },
+    parallelReader: {
+        match: 'parallel-reader',
+        path: '/parallel-reader',
+    },
     recent: {
         match: 'recent',
         path: '/recent',
