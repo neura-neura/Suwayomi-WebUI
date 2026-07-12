@@ -34,3 +34,8 @@ export type ParallelPagePosition = {
     pageIndex: number;
     progress: number;
 };
+
+export type PageAnchor = {
+    leftPage: number;
+    rightPage: number;
+};
