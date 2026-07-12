@@ -2993,6 +2993,10 @@ msgstr "Reading direction"
 msgid "Reading mode"
 msgstr "Reading mode"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Recenter"
+msgstr "Recenter"
+
 #: src/features/library/components/LibraryOptionsPanel.tsx
 msgid "Recently added"
 msgstr "Recently added"
@@ -3656,6 +3660,10 @@ msgstr "Successfully migrated"
 msgid "Successfully migrated manga"
 msgstr "Successfully migrated manga"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Swap sides"
+msgstr "Swap sides"
+
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Sync"
 msgstr "Sync"
@@ -3696,6 +3704,10 @@ msgstr "Sync to an older state"
 #: src/features/settings/components/koreaderSync/KoreaderSyncSettings.tsx
 msgid "Sync will not be triggered if the progress difference is within this tolerance."
 msgstr "Sync will not be triggered if the progress difference is within this tolerance."
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Synchronize scrolling"
+msgstr "Synchronize scrolling"
 
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "SyncYomi"

@@ -7,29 +7,46 @@
  */
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import type { ParallelReaderSideSelection } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { ParallelReaderPane } from '@/features/parallel-reader/components/ParallelReaderPane.tsx';
 import { coerceIn } from '@/lib/HelperFunctions.ts';
+import { useParallelScrollSync } from '@/features/parallel-reader/hooks/useParallelScrollSync.ts';
 
 type ParallelReaderWorkspaceProps = {
     leftSelection: Required<ParallelReaderSideSelection>;
     rightSelection: Required<ParallelReaderSideSelection>;
     onClose: () => void;
+    onSwap: () => void;
 };
 
-export const ParallelReaderWorkspace = ({ leftSelection, rightSelection, onClose }: ParallelReaderWorkspaceProps) => {
+export const ParallelReaderWorkspace = ({
+    leftSelection,
+    rightSelection,
+    onClose,
+    onSwap,
+}: ParallelReaderWorkspaceProps) => {
     const { t } = useLingui();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const leftScrollRef = useRef<HTMLDivElement | null>(null);
     const rightScrollRef = useRef<HTMLDivElement | null>(null);
     const [leftWidth, setLeftWidth] = useState(50);
     const [isResizing, setIsResizing] = useState(false);
+    const [isSyncEnabled, setIsSyncEnabled] = useState(true);
+    const { onLeftScroll, onRightScroll, recenter } = useParallelScrollSync(
+        leftScrollRef,
+        rightScrollRef,
+        isSyncEnabled,
+    );
 
     const resize = useCallback((clientX: number) => {
         const bounds = containerRef.current?.getBoundingClientRect();
@@ -78,6 +95,18 @@ export const ParallelReaderWorkspace = ({ leftSelection, rightSelection, onClose
                 <Button onClick={onClose} startIcon={<ArrowBackIcon />}>
                     {t`Change chapters`}
                 </Button>
+                <FormControlLabel
+                    control={
+                        <Switch checked={isSyncEnabled} onChange={(event) => setIsSyncEnabled(event.target.checked)} />
+                    }
+                    label={t`Synchronize scrolling`}
+                />
+                <Button onClick={recenter} startIcon={<CenterFocusStrongIcon />}>
+                    {t`Recenter`}
+                </Button>
+                <Button onClick={onSwap} startIcon={<CompareArrowsIcon />}>
+                    {t`Swap sides`}
+                </Button>
             </Stack>
             <Box sx={{ flex: 1, minWidth: 0, overflowX: 'auto' }}>
                 <Box
@@ -89,7 +118,7 @@ export const ParallelReaderWorkspace = ({ leftSelection, rightSelection, onClose
                         minWidth: 720,
                     }}
                 >
-                    <ParallelReaderPane scrollRef={leftScrollRef} selection={leftSelection} />
+                    <ParallelReaderPane onScroll={onLeftScroll} scrollRef={leftScrollRef} selection={leftSelection} />
                     <Box
                         role="separator"
                         aria-label={t`Resize reader columns`}
@@ -107,7 +136,11 @@ export const ParallelReaderWorkspace = ({ leftSelection, rightSelection, onClose
                             touchAction: 'none',
                         }}
                     />
-                    <ParallelReaderPane scrollRef={rightScrollRef} selection={rightSelection} />
+                    <ParallelReaderPane
+                        onScroll={onRightScroll}
+                        scrollRef={rightScrollRef}
+                        selection={rightSelection}
+                    />
                 </Box>
             </Box>
         </Stack>

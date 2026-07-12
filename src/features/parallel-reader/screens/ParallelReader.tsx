@@ -47,6 +47,10 @@ export const ParallelReader = () => {
                     chapter: rightSelection.chapter,
                 }}
                 onClose={() => setIsReady(false)}
+                onSwap={() => {
+                    setLeftSelection(rightSelection);
+                    setRightSelection(leftSelection);
+                }}
             />
         );
     }

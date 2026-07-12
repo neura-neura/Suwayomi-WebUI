@@ -21,11 +21,12 @@ import { useParallelChapterPages } from '@/features/parallel-reader/hooks/usePar
 import { getErrorMessage } from '@/lib/HelperFunctions.ts';
 
 type ParallelReaderPaneProps = {
+    onScroll: () => void;
     scrollRef: RefObject<HTMLDivElement | null>;
     selection: Required<ParallelReaderSideSelection>;
 };
 
-export const ParallelReaderPane = ({ scrollRef, selection }: ParallelReaderPaneProps) => {
+export const ParallelReaderPane = ({ onScroll, scrollRef, selection }: ParallelReaderPaneProps) => {
     const { t } = useLingui();
     const { chapter, manga, source } = selection;
     const { pages, loading, error, refetch } = useParallelChapterPages(chapter.id, source.id);
@@ -34,6 +35,7 @@ export const ParallelReaderPane = ({ scrollRef, selection }: ParallelReaderPaneP
         <Paper
             ref={scrollRef}
             component="section"
+            onScroll={onScroll}
             tabIndex={0}
             variant="outlined"
             sx={{ height: '100%', minWidth: 0, overflow: 'auto', overscrollBehavior: 'contain' }}
