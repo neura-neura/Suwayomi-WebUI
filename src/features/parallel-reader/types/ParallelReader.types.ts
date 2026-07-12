@@ -29,3 +29,8 @@ export type ParallelReaderSideSelection = {
     manga?: ParallelReaderMangaSelection;
     chapter?: ParallelReaderChapterSelection;
 };
+
+export type ParallelPagePosition = {
+    pageIndex: number;
+    progress: number;
+};

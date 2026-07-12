@@ -136,7 +136,6 @@ msgstr "{0} / {1}{2}"
 
 #. placeholder {0}: pages.length
 #: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
-#: src/features/parallel-reader/components/ParallelReaderPane.tsx
 msgid "{0} pages"
 msgstr "{0} pages"
 
@@ -2845,6 +2844,12 @@ msgstr "Page"
 #: src/features/parallel-reader/components/ParallelReaderPane.tsx
 msgid "Page {0}"
 msgstr "Page {0}"
+
+#. placeholder {0}: currentPosition.pageIndex + 1
+#. placeholder {1}: pages.length
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
+msgid "Page {0} of {1}"
+msgstr "Page {0} of {1}"
 
 #: src/features/reader/settings/layout/components/ReaderSettingPageGap.tsx
 msgid "Page gap"
