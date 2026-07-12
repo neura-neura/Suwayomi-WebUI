@@ -56,6 +56,18 @@ export const GET_SOURCES_LIST = gql`
     }
 `;
 
+export const GET_SOURCES_BASE = gql`
+    ${SOURCE_BASE_FIELDS}
+
+    query GET_SOURCES_BASE {
+        sources {
+            nodes {
+                ...SOURCE_BASE_FIELDS
+            }
+        }
+    }
+`;
+
 export const GET_MIGRATABLE_SOURCES = gql`
     ${SOURCE_BASE_FIELDS}
 

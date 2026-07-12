@@ -813,6 +813,7 @@ msgstr "Channel"
 #: src/features/downloads/components/DownloadAheadSetting.tsx
 #: src/features/downloads/screens/DownloadSettings.tsx
 #: src/features/migration/components/MigrationOptionsDialog.tsx
+#: src/features/parallel-reader/components/ParallelChapterSelector.tsx
 #: src/features/reader/overlay/navigation/desktop/components/ReaderNavBarDesktopChapterNavigation.tsx
 #: src/features/tracker/components/cards/TrackerActiveCard.tsx
 #: src/features/tracker/components/cards/TrackerMangaCard.tsx
@@ -2242,6 +2243,10 @@ msgstr "Layout"
 msgid "Left"
 msgstr "Left"
 
+#: src/features/parallel-reader/screens/ParallelReader.tsx
+msgid "Left side"
+msgstr "Left side"
+
 #: src/features/reader/settings/layout/components/ReaderSettingReadingDirection.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Left to right"
@@ -2624,6 +2629,7 @@ msgstr "No downloads"
 
 #: src/features/global-search/screens/SearchAll.tsx
 #: src/features/manga/components/MangaGrid.tsx
+#: src/features/parallel-reader/components/ParallelChapterSelector.tsx
 #: src/features/source/browse/screens/SourceMangas.tsx
 #: src/features/tracker/components/TrackerSearch.tsx
 msgid "No manga found"
@@ -2779,6 +2785,10 @@ msgstr "Open in WebView"
 #: src/features/reader/settings/behaviour/components/ReaderSettingExitMode.tsx
 msgid "Open page on exit"
 msgstr "Open page on exit"
+
+#: src/features/parallel-reader/screens/ParallelReader.tsx
+msgid "Open parallel reader"
+msgstr "Open parallel reader"
 
 #: src/features/settings/screens/WebUISettings.tsx
 msgid "Open the WebUI when starting the server"
@@ -3102,6 +3112,10 @@ msgstr "Right"
 msgid "Right and left"
 msgstr "Right and left"
 
+#: src/features/parallel-reader/screens/ParallelReader.tsx
+msgid "Right side"
+msgstr "Right side"
+
 #: src/features/reader/settings/layout/components/ReaderSettingReadingDirection.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Right to left"
@@ -3173,6 +3187,7 @@ msgstr "Scroll forward"
 
 #: src/base/components/AppbarSearch.tsx
 #: src/features/migration/components/MigrationBulkSearchOptionsDialog.tsx
+#: src/features/parallel-reader/components/ParallelChapterSelector.tsx
 msgid "Search"
 msgstr "Search"
 
@@ -3196,6 +3211,10 @@ msgid ""
 msgstr ""
 "Search for a ID via \"id:<ID>\" (e.g. \"id:13\")\n"
 "Limit search to your lists via \"my:<Title>\" (e.g. \"my:One Piece\")"
+
+#: src/features/parallel-reader/components/ParallelChapterSelector.tsx
+msgid "Search manga"
+msgstr "Search manga"
 
 #: src/features/migration/components/MigrationBulkSearchOptionsDialog.tsx
 msgid "Search options"
@@ -3506,6 +3525,7 @@ msgstr "Sort"
 #: src/features/browse/screens/Browse.tsx
 #: src/features/browse/screens/BrowseSettings.tsx
 #: src/features/manga/components/details/MangaDetails.tsx
+#: src/features/parallel-reader/components/ParallelChapterSelector.tsx
 #: src/features/source/browse/screens/SourceMangas.tsx
 msgid "Source"
 msgstr "Source"

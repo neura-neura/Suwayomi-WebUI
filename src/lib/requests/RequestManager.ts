@@ -1865,6 +1865,14 @@ export class RequestManager {
         return this.doRequest(GQLMethod.USE_QUERY, GET_SOURCES_LIST, {}, options);
     }
 
+    public useGetSources<Data, Variables extends OperationVariables>(
+        document: DocumentNode | TypedDocumentNode<Data, Variables>,
+        variables: Variables,
+        options?: QueryHookOptions<Data, Variables>,
+    ): AbortableApolloUseQueryResponse<Data, Variables> {
+        return this.doRequest(GQLMethod.USE_QUERY, document, variables, options);
+    }
+
     public useGetSource<Data, Variables extends OperationVariables>(
         document: DocumentNode | TypedDocumentNode<Data, Variables>,
         id: string,
