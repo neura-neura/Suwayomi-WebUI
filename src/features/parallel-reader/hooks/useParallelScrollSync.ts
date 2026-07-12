@@ -8,9 +8,9 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
-import type { ParallelPagePosition } from '@/features/parallel-reader/types/ParallelReader.types.ts';
+import type { PageAnchor, ParallelPagePosition } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
-import { coerceIn } from '@/lib/HelperFunctions.ts';
+import { mapPagePosition } from '@/features/parallel-reader/utils/PageMapping.ts';
 
 export type ParallelReaderSide = 'left' | 'right';
 export type ParallelScrollSyncMode = 'page' | 'percentage';
@@ -25,6 +25,7 @@ export const useParallelScrollSync = (
     rightRef: RefObject<HTMLElement | null>,
     leftPageElementsRef: RefObject<(HTMLElement | null)[]>,
     rightPageElementsRef: RefObject<(HTMLElement | null)[]>,
+    anchors: PageAnchor[],
     enabled: boolean,
     mode: ParallelScrollSyncMode,
 ) => {
@@ -58,10 +59,16 @@ export const useParallelScrollSync = (
             animationFrameRef.current = requestAnimationFrame(() => {
                 programmaticTargetRef.current = targetSide;
                 if (mode === 'page' && sourcePosition && targetPages.length) {
-                    scrollToPagePosition(target, targetPages, {
-                        pageIndex: coerceIn(sourcePosition.pageIndex, 0, targetPages.length - 1),
-                        progress: sourcePosition.progress,
-                    });
+                    scrollToPagePosition(
+                        target,
+                        targetPages,
+                        mapPagePosition(
+                            sourcePosition,
+                            anchors,
+                            sourceSide === 'left' ? 'left-to-right' : 'right-to-left',
+                            targetPages.length,
+                        ),
+                    );
                 } else {
                     const progress = getScrollProgress(source);
                     const targetScrollableHeight = target.scrollHeight - target.clientHeight;
@@ -74,7 +81,7 @@ export const useParallelScrollSync = (
                 });
             });
         },
-        [getElements, mode],
+        [anchors, getElements, mode],
     );
 
     const handleScroll = useCallback(

@@ -19,11 +19,17 @@ import TextField from '@mui/material/TextField';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { useLingui } from '@lingui/react/macro';
-import type { ParallelReaderSideSelection } from '@/features/parallel-reader/types/ParallelReader.types.ts';
+import type {
+    PageAnchor,
+    ParallelPagePosition,
+    ParallelReaderSideSelection,
+} from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { ParallelReaderPane } from '@/features/parallel-reader/components/ParallelReaderPane.tsx';
 import { coerceIn } from '@/lib/HelperFunctions.ts';
 import { useParallelScrollSync } from '@/features/parallel-reader/hooks/useParallelScrollSync.ts';
 import type { ParallelScrollSyncMode } from '@/features/parallel-reader/hooks/useParallelScrollSync.ts';
+import { PageAnchorEditor } from '@/features/parallel-reader/components/PageAnchorEditor.tsx';
+import { scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
 
 type ParallelReaderWorkspaceProps = {
     leftSelection: Required<ParallelReaderSideSelection>;
@@ -48,11 +54,15 @@ export const ParallelReaderWorkspace = ({
     const [isResizing, setIsResizing] = useState(false);
     const [isSyncEnabled, setIsSyncEnabled] = useState(true);
     const [syncMode, setSyncMode] = useState<ParallelScrollSyncMode>('page');
+    const [anchors, setAnchors] = useState<PageAnchor[]>([]);
+    const [leftPosition, setLeftPosition] = useState<ParallelPagePosition>({ pageIndex: 0, progress: 0 });
+    const [rightPosition, setRightPosition] = useState<ParallelPagePosition>({ pageIndex: 0, progress: 0 });
     const { onLeftScroll, onRightScroll, recenter } = useParallelScrollSync(
         leftScrollRef,
         rightScrollRef,
         leftPageElementsRef,
         rightPageElementsRef,
+        anchors,
         isSyncEnabled,
         syncMode,
     );
@@ -98,6 +108,35 @@ export const ParallelReaderWorkspace = ({
         setLeftWidth((width) => coerceIn(width + (event.key === 'ArrowLeft' ? -2 : 2), 25, 75));
     };
 
+    const handleLeftScroll = (position?: ParallelPagePosition) => {
+        if (position) {
+            setLeftPosition(position);
+        }
+        onLeftScroll(position);
+    };
+
+    const handleRightScroll = (position?: ParallelPagePosition) => {
+        if (position) {
+            setRightPosition(position);
+        }
+        onRightScroll(position);
+    };
+
+    const goToAnchor = (anchor: PageAnchor) => {
+        if (leftScrollRef.current) {
+            scrollToPagePosition(leftScrollRef.current, leftPageElementsRef.current, {
+                pageIndex: anchor.leftPage,
+                progress: 0,
+            });
+        }
+        if (rightScrollRef.current) {
+            scrollToPagePosition(rightScrollRef.current, rightPageElementsRef.current, {
+                pageIndex: anchor.rightPage,
+                progress: 0,
+            });
+        }
+    };
+
     return (
         <Stack spacing={1} sx={{ height: 'calc(100dvh - 80px)', minHeight: 480, p: 1 }}>
             <Stack direction="row" spacing={1}>
@@ -123,10 +162,29 @@ export const ParallelReaderWorkspace = ({
                 <Button onClick={recenter} startIcon={<CenterFocusStrongIcon />}>
                     {t`Recenter`}
                 </Button>
-                <Button onClick={onSwap} startIcon={<CompareArrowsIcon />}>
+                <Button
+                    onClick={() => {
+                        setAnchors(
+                            anchors
+                                .map(({ leftPage, rightPage }) => ({ leftPage: rightPage, rightPage: leftPage }))
+                                .toSorted((first, second) => first.leftPage - second.leftPage),
+                        );
+                        onSwap();
+                    }}
+                    startIcon={<CompareArrowsIcon />}
+                >
                     {t`Swap sides`}
                 </Button>
             </Stack>
+            <PageAnchorEditor
+                anchors={anchors}
+                leftPageCount={leftSelection.chapter.pageCount}
+                leftPosition={leftPosition}
+                onChange={setAnchors}
+                onGoTo={goToAnchor}
+                rightPageCount={rightSelection.chapter.pageCount}
+                rightPosition={rightPosition}
+            />
             <Box sx={{ flex: 1, minWidth: 0, overflowX: 'auto' }}>
                 <Box
                     ref={containerRef}
@@ -138,7 +196,7 @@ export const ParallelReaderWorkspace = ({
                     }}
                 >
                     <ParallelReaderPane
-                        onScroll={onLeftScroll}
+                        onScroll={handleLeftScroll}
                         pageElementsRef={leftPageElementsRef}
                         scrollRef={leftScrollRef}
                         selection={leftSelection}
@@ -161,7 +219,7 @@ export const ParallelReaderWorkspace = ({
                         }}
                     />
                     <ParallelReaderPane
-                        onScroll={onRightScroll}
+                        onScroll={handleRightScroll}
                         pageElementsRef={rightPageElementsRef}
                         scrollRef={rightScrollRef}
                         selection={rightSelection}

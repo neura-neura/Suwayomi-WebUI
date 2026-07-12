@@ -374,6 +374,10 @@ msgstr "Aborted"
 msgid "About"
 msgstr "About"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Actions"
+msgstr "Actions"
+
 #: src/features/device/screens/DeviceSetting.tsx
 msgid "Active device"
 msgstr "Active device"
@@ -403,6 +407,10 @@ msgstr "Add bookmark"
 #: src/features/extension/store/screens/ExtensionStores.tsx
 msgid "Add extension store"
 msgstr "Add extension store"
+
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Add offset"
+msgstr "Add offset"
 
 #: src/features/manga/components/details/MangaDetails.tsx
 #: src/features/manga/components/MangaBadges.tsx
@@ -1380,6 +1388,10 @@ msgstr "Delete downloaded"
 msgid "Delete finished chapters while reading"
 msgstr "Delete finished chapters while reading"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Delete page link"
+msgstr "Delete page link"
+
 #: src/features/source/browse/components/SourceOptions.tsx
 msgid "Delete search"
 msgstr "Delete search"
@@ -1892,6 +1904,10 @@ msgstr "Global update"
 msgid "Global update (last update: {date})"
 msgstr "Global update (last update: {date})"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Go"
+msgstr "Go"
+
 #: src/features/reader/settings/general/components/ReaderSettingBackgroundColor.tsx
 msgid "Gray"
 msgstr "Gray"
@@ -2091,6 +2107,10 @@ msgstr "Inform about version update"
 msgid "Information"
 msgstr "Information"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Initial page offset"
+msgstr "Initial page offset"
+
 #: src/features/backup/component/BackupValidationDialog.tsx
 #: src/features/extension/Extensions.constants.ts
 msgid "Install"
@@ -2256,6 +2276,10 @@ msgstr "Layout"
 msgid "Left"
 msgstr "Left"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Left page"
+msgstr "Left page"
+
 #: src/features/parallel-reader/screens/ParallelReader.tsx
 msgid "Left side"
 msgstr "Left side"
@@ -2304,6 +2328,10 @@ msgstr "Limit reader width"
 #: src/features/downloads/screens/DownloadSettings.tsx
 msgid "Limit the amount of new chapters that are going to get downloaded."
 msgstr "Limit the amount of new chapters that are going to get downloaded."
+
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Link current pages"
+msgstr "Link current pages"
 
 #: src/features/settings/screens/About.tsx
 msgid "Links"
@@ -2863,6 +2891,10 @@ msgstr "Page and progress"
 msgid "Page gap"
 msgstr "Page gap"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Page links must be in range and increase on both sides."
+msgstr "Page links must be in range and increase on both sides."
+
 #: src/features/navigation-bar/NavigationBar.constants.ts
 #: src/features/parallel-reader/screens/ParallelReader.tsx
 msgid "Parallel Reader"
@@ -3095,6 +3127,10 @@ msgstr "Removed non library manga from categories"
 msgid "Reset"
 msgstr "Reset"
 
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Reset links"
+msgstr "Reset links"
+
 #: src/base/components/settings/DateSetting.tsx
 #: src/base/components/settings/NumberSetting.tsx
 #: src/base/components/settings/TimeSetting.tsx
@@ -3151,6 +3187,10 @@ msgstr "Right"
 #: src/features/reader/settings/layout/components/ReaderSettingTapZoneLayout.tsx
 msgid "Right and left"
 msgstr "Right and left"
+
+#: src/features/parallel-reader/components/PageAnchorEditor.tsx
+msgid "Right page"
+msgstr "Right page"
 
 #: src/features/parallel-reader/screens/ParallelReader.tsx
 msgid "Right side"
