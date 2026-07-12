@@ -136,6 +136,7 @@ msgstr "{0} / {1}{2}"
 
 #. placeholder {0}: pages.length
 #: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
 msgid "{0} pages"
 msgstr "{0} pages"
 
@@ -799,6 +800,10 @@ msgstr "Change categories"
 #: src/features/manga/Manga.constants.ts
 msgid "Change categories of selected"
 msgstr "Change categories of selected"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Change chapters"
+msgstr "Change chapters"
 
 #: src/features/app-updates/components/ServerUpdateChecker.tsx
 #: src/features/app-updates/components/VersionUpdateInfoDialog.tsx
@@ -2649,6 +2654,7 @@ msgstr "No manga matches this filter"
 msgid "No match found"
 msgstr "No match found"
 
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
 #: src/features/reader/viewer/ReaderChapterViewer.tsx
 msgid "No pages found"
 msgstr "No pages found"
@@ -2836,6 +2842,7 @@ msgstr "Page"
 
 #. placeholder {0}: index + 1
 #: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
 msgid "Page {0}"
 msgstr "Page {0}"
 
@@ -3077,6 +3084,10 @@ msgstr "Reset"
 msgid "Reset to Default"
 msgstr "Reset to Default"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Resize reader columns"
+msgstr "Resize reader columns"
+
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Response fallback"
 msgstr "Response fallback"
@@ -3107,6 +3118,7 @@ msgstr "Resume"
 #: src/features/manga/hooks/useManageMangaLibraryState.tsx
 #: src/features/migration/components/migration-entry/MigrationDestinationEntry.tsx
 #: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
 msgid "Retry"
 msgstr "Retry"
 

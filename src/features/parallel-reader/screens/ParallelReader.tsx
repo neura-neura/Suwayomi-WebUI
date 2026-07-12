@@ -15,7 +15,7 @@ import { useLingui } from '@lingui/react/macro';
 import { useAppTitle } from '@/features/navigation-bar/hooks/useAppTitle.ts';
 import { ParallelChapterSelector } from '@/features/parallel-reader/components/ParallelChapterSelector.tsx';
 import type { ParallelReaderSideSelection } from '@/features/parallel-reader/types/ParallelReader.types.ts';
-import { ParallelChapterPagesPreview } from '@/features/parallel-reader/components/ParallelChapterPagesPreview.tsx';
+import { ParallelReaderWorkspace } from '@/features/parallel-reader/components/ParallelReaderWorkspace.tsx';
 
 export const ParallelReader = () => {
     const { t } = useLingui();
@@ -24,6 +24,32 @@ export const ParallelReader = () => {
     const [isReady, setIsReady] = useState(false);
 
     useAppTitle(t`Parallel Reader`);
+
+    if (
+        isReady &&
+        leftSelection.source &&
+        leftSelection.manga &&
+        leftSelection.chapter &&
+        rightSelection.source &&
+        rightSelection.manga &&
+        rightSelection.chapter
+    ) {
+        return (
+            <ParallelReaderWorkspace
+                leftSelection={{
+                    source: leftSelection.source,
+                    manga: leftSelection.manga,
+                    chapter: leftSelection.chapter,
+                }}
+                rightSelection={{
+                    source: rightSelection.source,
+                    manga: rightSelection.manga,
+                    chapter: rightSelection.chapter,
+                }}
+                onClose={() => setIsReady(false)}
+            />
+        );
+    }
 
     return (
         <Box sx={{ p: 2 }}>
@@ -54,30 +80,6 @@ export const ParallelReader = () => {
                 >
                     {t`Open parallel reader`}
                 </Button>
-                {isReady &&
-                    leftSelection.source &&
-                    leftSelection.manga &&
-                    leftSelection.chapter &&
-                    rightSelection.source &&
-                    rightSelection.manga &&
-                    rightSelection.chapter && (
-                        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' } }}>
-                            <ParallelChapterPagesPreview
-                                selection={{
-                                    source: leftSelection.source,
-                                    manga: leftSelection.manga,
-                                    chapter: leftSelection.chapter,
-                                }}
-                            />
-                            <ParallelChapterPagesPreview
-                                selection={{
-                                    source: rightSelection.source,
-                                    manga: rightSelection.manga,
-                                    chapter: rightSelection.chapter,
-                                }}
-                            />
-                        </Box>
-                    )}
             </Stack>
         </Box>
     );
