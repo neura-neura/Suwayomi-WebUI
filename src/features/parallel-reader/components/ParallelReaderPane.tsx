@@ -33,6 +33,8 @@ type ParallelReaderPaneProps = {
     selection: Required<ParallelReaderSideSelection>;
 };
 
+const PAGE_PRELOAD_RADIUS = 3;
+
 export const ParallelReaderPane = ({
     initialPosition,
     onScroll,
@@ -137,6 +139,7 @@ export const ParallelReaderPane = ({
                         <SpinnerImage
                             alt={t`Page ${index + 1}`}
                             src={page}
+                            shouldLoad={Math.abs(index - currentPosition.pageIndex) <= PAGE_PRELOAD_RADIUS}
                             shouldDecode
                             onLoad={updatePagePosition}
                             spinnerStyle={{ minHeight: '65vh', width: '100%' }}

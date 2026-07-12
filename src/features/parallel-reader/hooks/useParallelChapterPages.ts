@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { requestManager } from '@/lib/requests/RequestManager.ts';
 import { UrlUtil } from '@/lib/UrlUtil.ts';
+import { addSourceIdToPageUrl } from '@/features/parallel-reader/utils/PageUrls.ts';
 
 export const useParallelChapterPages = (chapterId: number, sourceId: string) => {
     const [fetchPages, response] = requestManager.useGetChapterPagesFetch(chapterId);
@@ -28,7 +29,12 @@ export const useParallelChapterPages = (chapterId: number, sourceId: string) => 
     }, [chapterId, sourceId]);
 
     const pages = useMemo(
-        () => (response.data?.fetchChapterPages?.pages ?? []).map((page) => UrlUtil.addParams(page, { sourceId })),
+        () =>
+            (response.data?.fetchChapterPages?.pages ?? []).map((page) => {
+                const absolutePageUrl = UrlUtil.asUrl(page)?.toString() ?? requestManager.getValidImgUrlFor(page);
+
+                return addSourceIdToPageUrl(absolutePageUrl, sourceId);
+            }),
         [response.data?.fetchChapterPages?.pages, sourceId],
     );
 
