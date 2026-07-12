@@ -134,6 +134,11 @@ msgstr "{0} / {1}"
 msgid "{0} / {1}{2}"
 msgstr "{0} / {1}{2}"
 
+#. placeholder {0}: pages.length
+#: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
+msgid "{0} pages"
+msgstr "{0} pages"
+
 #. placeholder {0}: updateStatus.progress
 #: src/features/app-updates/components/WebUIUpdateChecker.tsx
 msgid "{0}% | Updating…"
@@ -2829,6 +2834,11 @@ msgstr "Overlay mode"
 msgid "Page"
 msgstr "Page"
 
+#. placeholder {0}: index + 1
+#: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
+msgid "Page {0}"
+msgstr "Page {0}"
+
 #: src/features/reader/settings/layout/components/ReaderSettingPageGap.tsx
 msgid "Page gap"
 msgstr "Page gap"
@@ -3096,6 +3106,7 @@ msgstr "Resume"
 #: src/features/chapter/components/buttons/ChapterDownloadRetryButton.tsx
 #: src/features/manga/hooks/useManageMangaLibraryState.tsx
 #: src/features/migration/components/migration-entry/MigrationDestinationEntry.tsx
+#: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
 msgid "Retry"
 msgstr "Retry"
 
