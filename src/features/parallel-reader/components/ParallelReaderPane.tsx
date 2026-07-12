@@ -13,7 +13,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { SpinnerImage } from '@/base/components/SpinnerImage.tsx';
@@ -23,20 +23,28 @@ import type {
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { useParallelChapterPages } from '@/features/parallel-reader/hooks/useParallelChapterPages.ts';
 import { getErrorMessage } from '@/lib/HelperFunctions.ts';
-import { getVisiblePagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
+import { getVisiblePagePosition, scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
 
 type ParallelReaderPaneProps = {
+    initialPosition: ParallelPagePosition;
     onScroll: (position: ParallelPagePosition | undefined) => void;
     pageElementsRef: RefObject<(HTMLElement | null)[]>;
     scrollRef: RefObject<HTMLDivElement | null>;
     selection: Required<ParallelReaderSideSelection>;
 };
 
-export const ParallelReaderPane = ({ onScroll, pageElementsRef, scrollRef, selection }: ParallelReaderPaneProps) => {
+export const ParallelReaderPane = ({
+    initialPosition,
+    onScroll,
+    pageElementsRef,
+    scrollRef,
+    selection,
+}: ParallelReaderPaneProps) => {
     const { t } = useLingui();
     const { chapter, manga, source } = selection;
     const { pages, loading, error, refetch } = useParallelChapterPages(chapter.id, source.id);
-    const [currentPosition, setCurrentPosition] = useState<ParallelPagePosition>({ pageIndex: 0, progress: 0 });
+    const [currentPosition, setCurrentPosition] = useState<ParallelPagePosition>(initialPosition);
+    const restoredChapterIdRef = useRef<number | undefined>(undefined);
 
     const updatePagePosition = useCallback(() => {
         if (!scrollRef.current) {
@@ -49,6 +57,24 @@ export const ParallelReaderPane = ({ onScroll, pageElementsRef, scrollRef, selec
         }
         onScroll(position);
     }, [onScroll, pageElementsRef, scrollRef]);
+
+    useEffect(() => {
+        if (!pages.length || restoredChapterIdRef.current === chapter.id || !scrollRef.current) {
+            return;
+        }
+
+        restoredChapterIdRef.current = chapter.id;
+        const restoreFrame = requestAnimationFrame(() => {
+            if (!scrollRef.current) {
+                return;
+            }
+
+            scrollToPagePosition(scrollRef.current, pageElementsRef.current, initialPosition);
+            setCurrentPosition(initialPosition);
+        });
+
+        return () => cancelAnimationFrame(restoreFrame);
+    }, [chapter.id, initialPosition, pageElementsRef, pages.length, scrollRef]);
 
     return (
         <Paper

@@ -30,6 +30,13 @@ import { useParallelScrollSync } from '@/features/parallel-reader/hooks/useParal
 import type { ParallelScrollSyncMode } from '@/features/parallel-reader/hooks/useParallelScrollSync.ts';
 import { PageAnchorEditor } from '@/features/parallel-reader/components/PageAnchorEditor.tsx';
 import { scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
+import { useLocalStorage } from '@/base/hooks/useStorage.tsx';
+import { AppStorage } from '@/lib/storage/AppStorage.ts';
+import {
+    DEFAULT_PARALLEL_READER_ALIGNMENT,
+    getParallelReaderAlignmentKey,
+    sanitizeParallelReaderAlignment,
+} from '@/features/parallel-reader/services/ParallelReaderPersistence.ts';
 
 type ParallelReaderWorkspaceProps = {
     leftSelection: Required<ParallelReaderSideSelection>;
@@ -50,13 +57,26 @@ export const ParallelReaderWorkspace = ({
     const rightScrollRef = useRef<HTMLDivElement | null>(null);
     const leftPageElementsRef = useRef<(HTMLElement | null)[]>([]);
     const rightPageElementsRef = useRef<(HTMLElement | null)[]>([]);
-    const [leftWidth, setLeftWidth] = useState(50);
+    const alignmentKey = getParallelReaderAlignmentKey(leftSelection, rightSelection);
+    const [persistedAlignment, setPersistedAlignment] = useLocalStorage<unknown>(
+        alignmentKey,
+        DEFAULT_PARALLEL_READER_ALIGNMENT,
+    );
+    const initialAlignmentRef = useRef(
+        sanitizeParallelReaderAlignment(
+            persistedAlignment,
+            leftSelection.chapter.pageCount,
+            rightSelection.chapter.pageCount,
+        ),
+    );
+    const loadedAlignmentKeyRef = useRef(alignmentKey);
+    const [leftWidth, setLeftWidth] = useState(initialAlignmentRef.current.leftWidth);
     const [isResizing, setIsResizing] = useState(false);
-    const [isSyncEnabled, setIsSyncEnabled] = useState(true);
-    const [syncMode, setSyncMode] = useState<ParallelScrollSyncMode>('page');
-    const [anchors, setAnchors] = useState<PageAnchor[]>([]);
-    const [leftPosition, setLeftPosition] = useState<ParallelPagePosition>({ pageIndex: 0, progress: 0 });
-    const [rightPosition, setRightPosition] = useState<ParallelPagePosition>({ pageIndex: 0, progress: 0 });
+    const [isSyncEnabled, setIsSyncEnabled] = useState(initialAlignmentRef.current.isSyncEnabled);
+    const [syncMode, setSyncMode] = useState<ParallelScrollSyncMode>(initialAlignmentRef.current.syncMode);
+    const [anchors, setAnchors] = useState<PageAnchor[]>(initialAlignmentRef.current.anchors);
+    const [leftPosition, setLeftPosition] = useState<ParallelPagePosition>(initialAlignmentRef.current.leftPosition);
+    const [rightPosition, setRightPosition] = useState<ParallelPagePosition>(initialAlignmentRef.current.rightPosition);
     const { onLeftScroll, onRightScroll, recenter } = useParallelScrollSync(
         leftScrollRef,
         rightScrollRef,
@@ -75,6 +95,43 @@ export const ParallelReaderWorkspace = ({
 
         setLeftWidth(coerceIn(((clientX - bounds.left) / bounds.width) * 100, 25, 75));
     }, []);
+
+    useEffect(() => {
+        if (loadedAlignmentKeyRef.current === alignmentKey) {
+            return;
+        }
+
+        loadedAlignmentKeyRef.current = alignmentKey;
+        const alignment = sanitizeParallelReaderAlignment(
+            persistedAlignment,
+            leftSelection.chapter.pageCount,
+            rightSelection.chapter.pageCount,
+        );
+        setAnchors(alignment.anchors);
+        setIsSyncEnabled(alignment.isSyncEnabled);
+        setLeftPosition(alignment.leftPosition);
+        setLeftWidth(alignment.leftWidth);
+        setRightPosition(alignment.rightPosition);
+        setSyncMode(alignment.syncMode);
+    }, [alignmentKey, persistedAlignment, leftSelection.chapter.pageCount, rightSelection.chapter.pageCount]);
+
+    useEffect(() => {
+        const persistTimeout = setTimeout(
+            () =>
+                setPersistedAlignment({
+                    anchors,
+                    isSyncEnabled,
+                    leftPosition,
+                    leftWidth,
+                    rightPosition,
+                    syncMode,
+                    version: 1,
+                }),
+            300,
+        );
+
+        return () => clearTimeout(persistTimeout);
+    }, [alignmentKey, anchors, isSyncEnabled, leftPosition, leftWidth, rightPosition, syncMode]);
 
     useEffect(() => {
         if (!isResizing) {
@@ -164,11 +221,18 @@ export const ParallelReaderWorkspace = ({
                 </Button>
                 <Button
                     onClick={() => {
-                        setAnchors(
-                            anchors
-                                .map(({ leftPage, rightPage }) => ({ leftPage: rightPage, rightPage: leftPage }))
-                                .toSorted((first, second) => first.leftPage - second.leftPage),
-                        );
+                        const swappedAnchors = anchors
+                            .map(({ leftPage, rightPage }) => ({ leftPage: rightPage, rightPage: leftPage }))
+                            .toSorted((first, second) => first.leftPage - second.leftPage);
+                        AppStorage.local.setItem(getParallelReaderAlignmentKey(rightSelection, leftSelection), {
+                            anchors: swappedAnchors,
+                            isSyncEnabled,
+                            leftPosition: rightPosition,
+                            leftWidth: 100 - leftWidth,
+                            rightPosition: leftPosition,
+                            syncMode,
+                            version: 1,
+                        });
                         onSwap();
                     }}
                     startIcon={<CompareArrowsIcon />}
@@ -198,6 +262,7 @@ export const ParallelReaderWorkspace = ({
                     <ParallelReaderPane
                         onScroll={handleLeftScroll}
                         pageElementsRef={leftPageElementsRef}
+                        initialPosition={leftPosition}
                         scrollRef={leftScrollRef}
                         selection={leftSelection}
                     />
@@ -221,6 +286,7 @@ export const ParallelReaderWorkspace = ({
                     <ParallelReaderPane
                         onScroll={handleRightScroll}
                         pageElementsRef={rightPageElementsRef}
+                        initialPosition={rightPosition}
                         scrollRef={rightScrollRef}
                         selection={rightSelection}
                     />

@@ -39,3 +39,13 @@ export type PageAnchor = {
     leftPage: number;
     rightPage: number;
 };
+
+export type ParallelReaderAlignmentState = {
+    anchors: PageAnchor[];
+    isSyncEnabled: boolean;
+    leftPosition: ParallelPagePosition;
+    leftWidth: number;
+    rightPosition: ParallelPagePosition;
+    syncMode: 'page' | 'percentage';
+    version: 1;
+};

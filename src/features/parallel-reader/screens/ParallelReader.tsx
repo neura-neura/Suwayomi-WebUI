@@ -10,18 +10,29 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { useAppTitle } from '@/features/navigation-bar/hooks/useAppTitle.ts';
 import { ParallelChapterSelector } from '@/features/parallel-reader/components/ParallelChapterSelector.tsx';
 import type { ParallelReaderSideSelection } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { ParallelReaderWorkspace } from '@/features/parallel-reader/components/ParallelReaderWorkspace.tsx';
+import { useLocalStorage } from '@/base/hooks/useStorage.tsx';
+import {
+    PARALLEL_READER_LEFT_SELECTION_KEY,
+    PARALLEL_READER_OPEN_KEY,
+    PARALLEL_READER_RIGHT_SELECTION_KEY,
+} from '@/features/parallel-reader/services/ParallelReaderPersistence.ts';
 
 export const ParallelReader = () => {
     const { t } = useLingui();
-    const [leftSelection, setLeftSelection] = useState<ParallelReaderSideSelection>({});
-    const [rightSelection, setRightSelection] = useState<ParallelReaderSideSelection>({});
-    const [isReady, setIsReady] = useState(false);
+    const [leftSelection, setLeftSelection] = useLocalStorage<ParallelReaderSideSelection>(
+        PARALLEL_READER_LEFT_SELECTION_KEY,
+        {},
+    );
+    const [rightSelection, setRightSelection] = useLocalStorage<ParallelReaderSideSelection>(
+        PARALLEL_READER_RIGHT_SELECTION_KEY,
+        {},
+    );
+    const [isReady, setIsReady] = useLocalStorage(PARALLEL_READER_OPEN_KEY, false);
 
     useAppTitle(t`Parallel Reader`);
 
