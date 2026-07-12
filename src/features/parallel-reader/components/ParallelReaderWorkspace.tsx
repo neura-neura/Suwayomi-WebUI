@@ -12,8 +12,10 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
+import TextField from '@mui/material/TextField';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { useLingui } from '@lingui/react/macro';
@@ -21,6 +23,7 @@ import type { ParallelReaderSideSelection } from '@/features/parallel-reader/typ
 import { ParallelReaderPane } from '@/features/parallel-reader/components/ParallelReaderPane.tsx';
 import { coerceIn } from '@/lib/HelperFunctions.ts';
 import { useParallelScrollSync } from '@/features/parallel-reader/hooks/useParallelScrollSync.ts';
+import type { ParallelScrollSyncMode } from '@/features/parallel-reader/hooks/useParallelScrollSync.ts';
 
 type ParallelReaderWorkspaceProps = {
     leftSelection: Required<ParallelReaderSideSelection>;
@@ -39,13 +42,19 @@ export const ParallelReaderWorkspace = ({
     const containerRef = useRef<HTMLDivElement | null>(null);
     const leftScrollRef = useRef<HTMLDivElement | null>(null);
     const rightScrollRef = useRef<HTMLDivElement | null>(null);
+    const leftPageElementsRef = useRef<(HTMLElement | null)[]>([]);
+    const rightPageElementsRef = useRef<(HTMLElement | null)[]>([]);
     const [leftWidth, setLeftWidth] = useState(50);
     const [isResizing, setIsResizing] = useState(false);
     const [isSyncEnabled, setIsSyncEnabled] = useState(true);
+    const [syncMode, setSyncMode] = useState<ParallelScrollSyncMode>('page');
     const { onLeftScroll, onRightScroll, recenter } = useParallelScrollSync(
         leftScrollRef,
         rightScrollRef,
+        leftPageElementsRef,
+        rightPageElementsRef,
         isSyncEnabled,
+        syncMode,
     );
 
     const resize = useCallback((clientX: number) => {
@@ -101,6 +110,16 @@ export const ParallelReaderWorkspace = ({
                     }
                     label={t`Synchronize scrolling`}
                 />
+                <TextField
+                    select
+                    label={t`Sync mode`}
+                    size="small"
+                    value={syncMode}
+                    onChange={(event) => setSyncMode(event.target.value as ParallelScrollSyncMode)}
+                >
+                    <MenuItem value="page">{t`Page and progress`}</MenuItem>
+                    <MenuItem value="percentage">{t`Chapter percentage`}</MenuItem>
+                </TextField>
                 <Button onClick={recenter} startIcon={<CenterFocusStrongIcon />}>
                     {t`Recenter`}
                 </Button>
@@ -118,7 +137,12 @@ export const ParallelReaderWorkspace = ({
                         minWidth: 720,
                     }}
                 >
-                    <ParallelReaderPane onScroll={onLeftScroll} scrollRef={leftScrollRef} selection={leftSelection} />
+                    <ParallelReaderPane
+                        onScroll={onLeftScroll}
+                        pageElementsRef={leftPageElementsRef}
+                        scrollRef={leftScrollRef}
+                        selection={leftSelection}
+                    />
                     <Box
                         role="separator"
                         aria-label={t`Resize reader columns`}
@@ -138,6 +162,7 @@ export const ParallelReaderWorkspace = ({
                     />
                     <ParallelReaderPane
                         onScroll={onRightScroll}
+                        pageElementsRef={rightPageElementsRef}
                         scrollRef={rightScrollRef}
                         selection={rightSelection}
                     />

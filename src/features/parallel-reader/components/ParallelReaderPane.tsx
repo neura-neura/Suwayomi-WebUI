@@ -13,7 +13,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { RefObject } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { SpinnerImage } from '@/base/components/SpinnerImage.tsx';
@@ -27,15 +27,15 @@ import { getVisiblePagePosition } from '@/features/parallel-reader/utils/PageVis
 
 type ParallelReaderPaneProps = {
     onScroll: (position: ParallelPagePosition | undefined) => void;
+    pageElementsRef: RefObject<(HTMLElement | null)[]>;
     scrollRef: RefObject<HTMLDivElement | null>;
     selection: Required<ParallelReaderSideSelection>;
 };
 
-export const ParallelReaderPane = ({ onScroll, scrollRef, selection }: ParallelReaderPaneProps) => {
+export const ParallelReaderPane = ({ onScroll, pageElementsRef, scrollRef, selection }: ParallelReaderPaneProps) => {
     const { t } = useLingui();
     const { chapter, manga, source } = selection;
     const { pages, loading, error, refetch } = useParallelChapterPages(chapter.id, source.id);
-    const pageElementsRef = useRef<(HTMLElement | null)[]>([]);
     const [currentPosition, setCurrentPosition] = useState<ParallelPagePosition>({ pageIndex: 0, progress: 0 });
 
     const updatePagePosition = useCallback(() => {
@@ -48,7 +48,7 @@ export const ParallelReaderPane = ({ onScroll, scrollRef, selection }: ParallelR
             setCurrentPosition(position);
         }
         onScroll(position);
-    }, [onScroll, scrollRef]);
+    }, [onScroll, pageElementsRef, scrollRef]);
 
     return (
         <Paper
@@ -103,7 +103,8 @@ export const ParallelReaderPane = ({ onScroll, scrollRef, selection }: ParallelR
                         key={page}
                         data-page-index={index}
                         ref={(element: HTMLDivElement | null) => {
-                            pageElementsRef.current[index] = element;
+                            const pageElements = pageElementsRef.current;
+                            pageElements[index] = element;
                         }}
                         sx={{ display: 'grid', minHeight: '65vh', width: '100%', placeItems: 'center' }}
                     >

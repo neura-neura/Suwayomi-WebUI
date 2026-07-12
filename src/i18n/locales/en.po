@@ -845,6 +845,10 @@ msgstr "Chapter list"
 msgid "Chapter number"
 msgstr "Chapter number"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Chapter percentage"
+msgstr "Chapter percentage"
+
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Chapter sort order"
 msgstr "Chapter sort order"
@@ -2851,6 +2855,10 @@ msgstr "Page {0}"
 msgid "Page {0} of {1}"
 msgstr "Page {0} of {1}"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Page and progress"
+msgstr "Page and progress"
+
 #: src/features/reader/settings/layout/components/ReaderSettingPageGap.tsx
 msgid "Page gap"
 msgstr "Page gap"
@@ -3688,6 +3696,10 @@ msgstr "Sync in progress"
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Sync interval"
 msgstr "Sync interval"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Sync mode"
+msgstr "Sync mode"
 
 #: src/features/settings/Settings.constants.ts
 msgid "Sync started"
