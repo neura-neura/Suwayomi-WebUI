@@ -459,6 +459,39 @@ function Set-ParallelReaderLauncherDataRoot {
     [void](New-Item -ItemType Junction -Path $LauncherDataRoot -Target $Root)
 }
 
+function ConvertTo-JavaWindowsPreferenceValue {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    # java.util.prefs escapes values in the Windows registry: upper-case
+    # characters are prefixed with '/', and backslashes become '//'.
+    $Encoded = New-Object Text.StringBuilder
+    foreach ($Character in $Value.ToCharArray()) {
+        if ($Character -eq '\') {
+            [void]$Encoded.Append('//')
+        } elseif ($Character -eq '/') {
+            [void]$Encoded.Append('\')
+        } elseif ([char]::IsUpper($Character)) {
+            [void]$Encoded.Append('/')
+            [void]$Encoded.Append($Character)
+        } else {
+            [void]$Encoded.Append($Character)
+        }
+    }
+    return $Encoded.ToString()
+}
+
+function Set-ParallelReaderLauncherPreference {
+    param([Parameter(Mandatory = $true)][string]$Root)
+
+    # The patched launcher has its own java.util.prefs node. Setting `root`
+    # makes its Launch button pass the independent data directory to the
+    # server process, rather than falling back to the official Tachidesk data.
+    $PreferencePath = 'HKCU:\Software\JavaSoft\Prefs\suwayomi\parallel'
+    [void](New-Item -Path $PreferencePath -Force)
+    $PreferenceValue = ConvertTo-JavaWindowsPreferenceValue -Value $Root
+    New-ItemProperty -Path $PreferencePath -Name 'root' -Value $PreferenceValue -PropertyType String -Force | Out-Null
+}
+
 function Get-ParallelReaderGraphicalLauncher {
     param([Parameter(Mandatory = $true)][string]$ServerRoot)
 
@@ -531,6 +564,7 @@ try {
     Install-ParallelReaderNotices -Root $DataRoot
     Update-ParallelReaderGraphicalLauncher -ServerRoot $InstallRoot
     Set-ParallelReaderLauncherDataRoot -Root $DataRoot
+    Set-ParallelReaderLauncherPreference -Root $DataRoot
     $LegacyLauncherPath = Join-Path $DataRoot 'Start-Suwayomi-ParallelReader.ps1'
     if (Test-Path -LiteralPath $LegacyLauncherPath -PathType Leaf) {
         Remove-Item -LiteralPath $LegacyLauncherPath -Force
