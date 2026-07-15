@@ -260,7 +260,7 @@ function Set-ParallelReaderConfiguration {
         'server.webUIFlavor = "Custom"',
         'server.webUIUpdateCheckInterval = 0',
         'server.webUIInterface = "BROWSER"',
-        'server.initialOpenInBrowserEnabled = false',
+        'server.initialOpenInBrowserEnabled = true',
         $ManagedBlockEnd
     ) -join "`r`n"
     $NewContent = if ($Existing) { $Existing + "`r`n`r`n" + $Block + "`r`n" } else { $Block + "`r`n" }
