@@ -37,13 +37,19 @@ export type ParallelPagePosition = {
     progress: number;
 };
 
+export type ParallelReaderSide = 'left' | 'right';
+
+export type ParallelLockstepMarkers = {
+    end: Record<ParallelReaderSide, ParallelPagePosition>;
+    start: Record<ParallelReaderSide, ParallelPagePosition>;
+};
+
 export type PageAnchor = {
     leftPage: number;
     rightPage: number;
 };
 
 export type ParallelScrollSyncMode = 'page' | 'percentage' | 'lockstep';
-export type ParallelReaderSide = 'left' | 'right';
 export type ParallelReaderReadingMode = 'continuous' | 'single';
 
 export type ParallelReaderPaneSettings = {
@@ -65,9 +71,10 @@ export type ParallelReaderAlignmentState = {
     leftPosition: ParallelPagePosition;
     leftWidth: number;
     lockstepCalibrated: boolean;
+    lockstepMarkers?: ParallelLockstepMarkers;
     percentageOffset: number;
     rightReaderSettings: ParallelReaderPaneSettings;
     rightPosition: ParallelPagePosition;
     syncMode: ParallelScrollSyncMode;
-    version: 3;
+    version: 4;
 };

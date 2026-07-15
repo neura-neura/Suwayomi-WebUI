@@ -10,25 +10,14 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import type {
     PageAnchor,
+    ParallelLockstepMarkers,
     ParallelPagePosition,
     ParallelReaderSide,
     ParallelScrollSyncMode,
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
-import { getVisiblePagePosition, scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
-import { mapPagePosition } from '@/features/parallel-reader/utils/PageMapping.ts';
-import {
-    getContentMovementTargetTop,
-    getPercentageTargetTop,
-    getScrollableHeight,
-} from '@/features/parallel-reader/utils/ScrollSync.ts';
-
-type LockstepOrigin = Record<
-    ParallelReaderSide,
-    {
-        scrollTop: number;
-        scrollableHeight: number;
-    }
->;
+import { scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
+import { mapPagePosition, mapPositionBetweenMarkers } from '@/features/parallel-reader/utils/PageMapping.ts';
+import { getPercentageTargetTop, getScrollableHeight } from '@/features/parallel-reader/utils/ScrollSync.ts';
 
 export const useParallelScrollSync = (
     leftRef: RefObject<HTMLElement | null>,
@@ -40,12 +29,13 @@ export const useParallelScrollSync = (
     mode: ParallelScrollSyncMode,
     percentageOffset: number,
     lockstepCalibrated: boolean,
+    lockstepMarkers: ParallelLockstepMarkers | undefined,
     onLockstepCalibrated: (calibrated: boolean) => void,
     calibrationKey: string,
 ) => {
     const animationFrameRef = useRef<number | undefined>(undefined);
     const pendingProgrammaticTopRef = useRef<Partial<Record<ParallelReaderSide, number>>>({});
-    const lockstepOriginRef = useRef<LockstepOrigin | undefined>(undefined);
+    const lockstepMarkersRef = useRef<ParallelLockstepMarkers | undefined>(undefined);
     const positionsRef = useRef<Record<ParallelReaderSide, ParallelPagePosition | undefined>>({
         left: undefined,
         right: undefined,
@@ -54,6 +44,7 @@ export const useParallelScrollSync = (
     const getElements = useCallback(
         (sourceSide: ParallelReaderSide) => ({
             source: sourceSide === 'left' ? leftRef.current : rightRef.current,
+            sourcePages: sourceSide === 'left' ? leftPageElementsRef.current : rightPageElementsRef.current,
             target: sourceSide === 'left' ? rightRef.current : leftRef.current,
             targetPages: sourceSide === 'left' ? rightPageElementsRef.current : leftPageElementsRef.current,
             targetSide: sourceSide === 'left' ? ('right' as const) : ('left' as const),
@@ -62,40 +53,27 @@ export const useParallelScrollSync = (
     );
 
     const calibrateLockstep = useCallback(
-        (providedPositions?: Partial<Record<ParallelReaderSide, ParallelPagePosition>>) => {
-            if (!leftRef.current || !rightRef.current) {
+        (markers = lockstepMarkers) => {
+            if (!markers) {
                 return false;
             }
 
-            const leftPosition =
-                providedPositions?.left ??
-                positionsRef.current.left ??
-                getVisiblePagePosition(leftRef.current, leftPageElementsRef.current);
-            const rightPosition =
-                providedPositions?.right ??
-                positionsRef.current.right ??
-                getVisiblePagePosition(rightRef.current, rightPageElementsRef.current);
-            if (!leftPosition || !rightPosition) {
+            const isOrdered = (side: ParallelReaderSide) => {
+                const start = markers.start[side];
+                const end = markers.end[side];
+                return end.pageIndex + end.progress > start.pageIndex + start.progress;
+            };
+            if (!isOrdered('left') || !isOrdered('right')) {
                 return false;
             }
 
             cancelAnimationFrame(animationFrameRef.current ?? 0);
             pendingProgrammaticTopRef.current = {};
-            positionsRef.current = { left: leftPosition, right: rightPosition };
-            lockstepOriginRef.current = {
-                left: {
-                    scrollTop: leftRef.current.scrollTop,
-                    scrollableHeight: getScrollableHeight(leftRef.current),
-                },
-                right: {
-                    scrollTop: rightRef.current.scrollTop,
-                    scrollableHeight: getScrollableHeight(rightRef.current),
-                },
-            };
+            lockstepMarkersRef.current = markers;
             onLockstepCalibrated(true);
             return true;
         },
-        [leftPageElementsRef, leftRef, onLockstepCalibrated, rightPageElementsRef, rightRef],
+        [lockstepMarkers, onLockstepCalibrated],
     );
 
     const scrollTargetToPagePosition = useCallback(
@@ -118,7 +96,7 @@ export const useParallelScrollSync = (
 
     const synchronizeFrom = useCallback(
         (sourceSide: ParallelReaderSide, sourcePosition = positionsRef.current[sourceSide]) => {
-            const { source, target, targetPages, targetSide } = getElements(sourceSide);
+            const { source, sourcePages, target, targetPages, targetSide } = getElements(sourceSide);
             if (!source || !target) {
                 return;
             }
@@ -155,20 +133,29 @@ export const useParallelScrollSync = (
                         );
                         break;
                     case 'lockstep': {
-                        const origin = lockstepOriginRef.current;
-                        if (!lockstepCalibrated || !origin) {
+                        const markers = lockstepMarkersRef.current;
+                        if (
+                            !lockstepCalibrated ||
+                            !markers ||
+                            !sourcePosition ||
+                            !sourcePages.length ||
+                            !targetPages.length
+                        ) {
                             break;
                         }
 
-                        writeTargetTop(
+                        scrollTargetToPagePosition(
                             target,
                             targetSide,
-                            getContentMovementTargetTop(
-                                source.scrollTop,
-                                getScrollableHeight(source),
-                                origin[sourceSide].scrollTop,
-                                getScrollableHeight(target),
-                                origin[targetSide].scrollTop,
+                            targetPages,
+                            mapPositionBetweenMarkers(
+                                sourcePosition,
+                                markers.start[sourceSide],
+                                markers.end[sourceSide],
+                                markers.start[targetSide],
+                                markers.end[targetSide],
+                                sourcePages.length,
+                                targetPages.length,
                             ),
                         );
                         break;
@@ -204,12 +191,12 @@ export const useParallelScrollSync = (
 
     useEffect(() => {
         if (!lockstepCalibrated) {
-            lockstepOriginRef.current = undefined;
+            lockstepMarkersRef.current = undefined;
         }
     }, [lockstepCalibrated]);
 
     useEffect(() => {
-        lockstepOriginRef.current = undefined;
+        lockstepMarkersRef.current = undefined;
         pendingProgrammaticTopRef.current = {};
     }, [calibrationKey]);
 

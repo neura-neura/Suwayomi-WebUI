@@ -7,6 +7,7 @@
  */
 
 import type {
+    ParallelLockstepMarkers,
     ParallelPagePosition,
     ParallelReaderAlignmentState,
     ParallelReaderPaneSettings,
@@ -47,11 +48,12 @@ export const DEFAULT_PARALLEL_READER_ALIGNMENT: ParallelReaderAlignmentState = {
     leftPosition: { pageIndex: 0, progress: 0 },
     leftWidth: 50,
     lockstepCalibrated: false,
+    lockstepMarkers: undefined,
     percentageOffset: 0,
     rightReaderSettings: createDefaultPaneSettings(),
     rightPosition: { pageIndex: 0, progress: 0 },
     syncMode: 'page',
-    version: 3,
+    version: 4,
 };
 
 const getSelectionIdentity = ({ source, manga, chapter }: Required<ParallelReaderSideSelection>): string =>
@@ -77,6 +79,41 @@ const sanitizePosition = (value: unknown, pageCount: number): ParallelPagePositi
         ),
         progress: coerceIn(typeof position.progress === 'number' ? position.progress : 0, 0, 1),
     };
+};
+
+const getPositionCoordinate = ({ pageIndex, progress }: ParallelPagePosition): number => pageIndex + progress;
+
+const sanitizeLockstepMarkers = (
+    value: unknown,
+    leftPageCount: number,
+    rightPageCount: number,
+): ParallelLockstepMarkers | undefined => {
+    if (!value || typeof value !== 'object') {
+        return undefined;
+    }
+
+    const markers = value as Partial<ParallelLockstepMarkers>;
+    if (!markers.start || !markers.end) {
+        return undefined;
+    }
+
+    const start = {
+        left: sanitizePosition(markers.start.left, leftPageCount),
+        right: sanitizePosition(markers.start.right, rightPageCount),
+    };
+    const end = {
+        left: sanitizePosition(markers.end.left, leftPageCount),
+        right: sanitizePosition(markers.end.right, rightPageCount),
+    };
+
+    if (
+        getPositionCoordinate(end.left) <= getPositionCoordinate(start.left) ||
+        getPositionCoordinate(end.right) <= getPositionCoordinate(start.right)
+    ) {
+        return undefined;
+    }
+
+    return { end, start };
 };
 
 const sanitizePaneSettings = (value: unknown): ParallelReaderPaneSettings => {
@@ -125,6 +162,7 @@ export const sanitizeParallelReaderAlignment = (
     const state = value as Partial<ParallelReaderAlignmentState>;
     const anchors = Array.isArray(state.anchors) ? state.anchors : [];
     const validAnchors = validatePageAnchors(anchors, leftPageCount, rightPageCount).length ? [] : anchors;
+    const lockstepMarkers = sanitizeLockstepMarkers(state.lockstepMarkers, leftPageCount, rightPageCount);
 
     return {
         anchors: validAnchors,
@@ -132,7 +170,9 @@ export const sanitizeParallelReaderAlignment = (
         leftReaderSettings: sanitizePaneSettings(state.leftReaderSettings),
         leftPosition: sanitizePosition(state.leftPosition, leftPageCount),
         leftWidth: coerceIn(typeof state.leftWidth === 'number' ? state.leftWidth : 50, 25, 75),
-        lockstepCalibrated: typeof state.lockstepCalibrated === 'boolean' ? state.lockstepCalibrated : false,
+        lockstepCalibrated:
+            typeof state.lockstepCalibrated === 'boolean' && state.lockstepCalibrated && Boolean(lockstepMarkers),
+        lockstepMarkers,
         percentageOffset:
             typeof state.percentageOffset === 'number' && Number.isFinite(state.percentageOffset)
                 ? coerceIn(state.percentageOffset, -1, 1)
@@ -140,6 +180,6 @@ export const sanitizeParallelReaderAlignment = (
         rightReaderSettings: sanitizePaneSettings(state.rightReaderSettings),
         rightPosition: sanitizePosition(state.rightPosition, rightPageCount),
         syncMode: ['page', 'percentage', 'lockstep'].includes(state.syncMode ?? '') ? state.syncMode! : 'page',
-        version: 3,
+        version: 4,
     };
 };

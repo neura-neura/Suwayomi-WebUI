@@ -12,6 +12,7 @@ import type { PageAnchor } from '@/features/parallel-reader/types/ParallelReader
 import {
     mapPageIndex,
     mapPagePosition,
+    mapPositionBetweenMarkers,
     upsertPageAnchor,
     validatePageAnchors,
 } from '@/features/parallel-reader/utils/PageMapping.ts';
@@ -52,6 +53,58 @@ test('preserves progress inside the mapped page', () => {
         pageIndex: 11,
         progress: 0.42,
     });
+});
+
+test('maps differing page counts between matching start and end markers', () => {
+    assert.deepEqual(
+        mapPositionBetweenMarkers(
+            { pageIndex: 14, progress: 0 },
+            { pageIndex: 0, progress: 0 },
+            { pageIndex: 27, progress: 1 },
+            { pageIndex: 0, progress: 0 },
+            { pageIndex: 137, progress: 1 },
+            28,
+            138,
+        ),
+        { pageIndex: 69, progress: 0 },
+    );
+});
+
+test('keeps both content markers exact', () => {
+    const start = { pageIndex: 3, progress: 0.25 };
+    const end = { pageIndex: 20, progress: 0.75 };
+    const targetStart = { pageIndex: 9, progress: 0.5 };
+    const targetEnd = { pageIndex: 99, progress: 0.25 };
+
+    assert.deepEqual(mapPositionBetweenMarkers(start, start, end, targetStart, targetEnd, 28, 138), targetStart);
+    assert.deepEqual(mapPositionBetweenMarkers(end, start, end, targetStart, targetEnd, 28, 138), targetEnd);
+});
+
+test('maps content before and after the matching marker range', () => {
+    assert.deepEqual(
+        mapPositionBetweenMarkers(
+            { pageIndex: 1, progress: 0 },
+            { pageIndex: 2, progress: 0 },
+            { pageIndex: 8, progress: 0 },
+            { pageIndex: 10, progress: 0 },
+            { pageIndex: 70, progress: 0 },
+            10,
+            100,
+        ),
+        { pageIndex: 5, progress: 0 },
+    );
+    assert.deepEqual(
+        mapPositionBetweenMarkers(
+            { pageIndex: 9, progress: 0 },
+            { pageIndex: 2, progress: 0 },
+            { pageIndex: 8, progress: 0 },
+            { pageIndex: 10, progress: 0 },
+            { pageIndex: 70, progress: 0 },
+            10,
+            100,
+        ),
+        { pageIndex: 85, progress: 0 },
+    );
 });
 
 test('validates contradictory and out of range anchors', () => {

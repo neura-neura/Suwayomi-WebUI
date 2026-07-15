@@ -55,13 +55,23 @@ test('sanitizes persisted dimensions and positions', () => {
     assert.deepEqual(result.anchors, [{ leftPage: 2, rightPage: 3 }]);
     assert.equal(result.isSyncEnabled, false);
     assert.equal(result.syncMode, 'percentage');
-    assert.equal(result.version, 3);
+    assert.equal(result.version, 4);
 });
 
-test('restores calibrated lockstep synchronization', () => {
+test('restores calibrated lockstep synchronization with two ordered content markers', () => {
     const result = sanitizeParallelReaderAlignment(
         {
             lockstepCalibrated: true,
+            lockstepMarkers: {
+                start: {
+                    left: { pageIndex: 1, progress: 0.25 },
+                    right: { pageIndex: 3, progress: 0.5 },
+                },
+                end: {
+                    left: { pageIndex: 8, progress: 0.75 },
+                    right: { pageIndex: 9, progress: 0.25 },
+                },
+            },
             syncMode: 'lockstep',
             version: 2,
         },
@@ -70,8 +80,42 @@ test('restores calibrated lockstep synchronization', () => {
     );
 
     assert.equal(result.lockstepCalibrated, true);
+    assert.deepEqual(result.lockstepMarkers, {
+        start: {
+            left: { pageIndex: 1, progress: 0.25 },
+            right: { pageIndex: 3, progress: 0.5 },
+        },
+        end: {
+            left: { pageIndex: 8, progress: 0.75 },
+            right: { pageIndex: 9, progress: 0.25 },
+        },
+    });
     assert.equal(result.syncMode, 'lockstep');
-    assert.equal(result.version, 3);
+    assert.equal(result.version, 4);
+});
+
+test('requires two ordered markers before restoring lockstep synchronization', () => {
+    const result = sanitizeParallelReaderAlignment(
+        {
+            lockstepCalibrated: true,
+            lockstepMarkers: {
+                start: {
+                    left: { pageIndex: 5, progress: 0 },
+                    right: { pageIndex: 5, progress: 0 },
+                },
+                end: {
+                    left: { pageIndex: 5, progress: 0 },
+                    right: { pageIndex: 8, progress: 0 },
+                },
+            },
+            syncMode: 'lockstep',
+        },
+        10,
+        10,
+    );
+
+    assert.equal(result.lockstepCalibrated, false);
+    assert.equal(result.lockstepMarkers, undefined);
 });
 
 test('sanitizes persisted percentage offsets', () => {
@@ -85,7 +129,7 @@ test('sanitizes persisted percentage offsets', () => {
     assert.equal(sanitizeParallelReaderAlignment({ percentageOffset: '0.5' }, 10, 10).percentageOffset, 0);
 });
 
-test('supplies version 3 pane-control defaults for legacy alignment data', () => {
+test('supplies version 4 pane-control defaults for legacy alignment data', () => {
     const result = sanitizeParallelReaderAlignment(
         {
             anchors: [{ leftPage: 2, rightPage: 3 }],
@@ -101,7 +145,7 @@ test('supplies version 3 pane-control defaults for legacy alignment data', () =>
     assert.equal(result.leftReaderSettings.readingMode, 'continuous');
     assert.equal(result.leftReaderSettings.pageScaleMode, 0);
     assert.equal(result.rightReaderSettings.autoScroll.value, 5);
-    assert.equal(result.version, 3);
+    assert.equal(result.version, 4);
 });
 
 test('sanitizes independent settings for both reader panes', () => {

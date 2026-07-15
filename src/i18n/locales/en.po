@@ -777,6 +777,7 @@ msgstr "Can't migrate an entry to itself"
 #: src/features/category/components/CreateOrEditCategoryDialog.tsx
 #: src/features/migration/components/MigrationBulkSearchOptionsDialog.tsx
 #: src/features/migration/components/MigrationOptionsDialog.tsx
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 #: src/features/reader/hotkeys/settings/components/RecordHotkey.tsx
 #: src/features/settings/components/globalUpdate/GlobalUpdateSettingsEntries.tsx
@@ -1626,6 +1627,10 @@ msgstr "Edit category"
 msgid "Edit manga categories"
 msgstr "Edit manga categories"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Edit start and end markers"
+msgstr "Edit start and end markers"
+
 #: src/features/theme/components/CreateThemeDialog.tsx
 msgid "Edit theme"
 msgstr "Edit theme"
@@ -1649,6 +1654,14 @@ msgstr "Enable page read progress"
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Enable the WebView via CEF (Chromium)"
 msgstr "Enable the WebView via CEF (Chromium)"
+
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
+msgid "End"
+msgstr "End"
+
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
+msgid "End marker. Drag to change its position."
+msgstr "End marker. Drag to change its position."
 
 #: src/features/downloads/screens/DownloadSettings.tsx
 msgid "Entries in excluded categories will not be downloaded even if they are also in included categories"
@@ -1907,10 +1920,6 @@ msgstr "FlareSolverr will automatically rotate expired sessions based on the TTL
 msgid "Flavor"
 msgstr "Flavor"
 
-#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Follows matching content despite different page counts or image sizes"
-msgstr "Follows matching content despite different page counts or image sizes"
-
 #: src/features/theme/Themes.ts
 msgid "Forest Dew"
 msgstr "Forest Dew"
@@ -1922,10 +1931,6 @@ msgstr "Forget manga categories"
 #: src/features/downloads/components/DeleteChaptersWhileReadingSetting.tsx
 msgid "Fourth to last read chapter"
 msgstr "Fourth to last read chapter"
-
-#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "From this point, both readers move through their remaining content at the same rate. Re-align whenever the scenes stop matching."
-msgstr "From this point, both readers move through their remaining content at the same rate. Re-align whenever the scenes stop matching."
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 msgid "Fullscreen"
@@ -2560,6 +2565,10 @@ msgstr "Match based on chapter number"
 msgid "Match found"
 msgstr "Match found"
 
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
+msgid "Match the beginning and end"
+msgstr "Match the beginning and end"
+
 #: src/features/migration/components/migration-entry/MigrationEntry.tsx
 msgid "Matches"
 msgstr "Matches"
@@ -2946,6 +2955,7 @@ msgstr "Page"
 
 #. placeholder {0}: index + 1
 #. placeholder {0}: pageIndex + 1
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
 #: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
 #: src/features/parallel-reader/components/ParallelReaderPane.tsx
 #: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
@@ -3109,10 +3119,12 @@ msgstr "Reader"
 msgid "Reader — Manga {mangaId} Chapter {chapterSourceOrder}"
 msgstr "Reader — Manga {mangaId} Chapter {chapterSourceOrder}"
 
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 msgid "Reader A"
 msgstr "Reader A"
 
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 msgid "Reader B"
 msgstr "Reader B"
@@ -3769,6 +3781,7 @@ msgstr "Standard"
 
 #: src/features/downloads/screens/DownloadQueue.tsx
 #: src/features/manga/components/ResumeFAB.tsx
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
 msgid "Start"
 msgstr "Start"
 
@@ -3779,6 +3792,10 @@ msgstr "Start auto scroll"
 #: src/features/tracker/components/cards/TrackerActiveCard.tsx
 msgid "Start date"
 msgstr "Start date"
+
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
+msgid "Start marker. Drag to change its position."
+msgstr "Start marker. Drag to change its position."
 
 #: src/features/migration/screens/MigrationSearch.tsx
 msgid "Start migration"
@@ -3963,6 +3980,10 @@ msgstr "The cache of the client (browser, electron) should get cleared alongside
 msgid "The category is empty"
 msgstr "The category is empty"
 
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
+msgid "The end marker must be after the start marker in both readers."
+msgstr "The end marker must be after the start marker in both readers."
+
 #: src/features/backup/component/BackupValidationDialog.tsx
 msgid "The following sources are not installed:"
 msgstr "The following sources are not installed:"
@@ -4071,9 +4092,17 @@ msgstr "This icon will be shown on the system that is running the server"
 msgid "This is the latest version"
 msgstr "This is the latest version"
 
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
+msgid "This panel opens from the bottom. Scroll each mini view, then drag the orange start and green end markers onto the same scenes."
+msgstr "This panel opens from the bottom. Scroll each mini view, then drag the orange start and green end markers onto the same scenes."
+
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 msgid "This saves the difference between the two current chapter positions."
 msgstr "This saves the difference between the two current chapter positions."
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "This saves the orange start marker. Next, a mini view opens from the bottom so you can place the green end marker."
+msgstr "This saves the orange start marker. Next, a mini view opens from the bottom so you can place the green end marker."
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 msgid "This saves the two current pages as a match for page synchronization."
@@ -4343,6 +4372,10 @@ msgstr ""
 "Use a custom WebUI.\n"
 "To use a custom WebUI replace the content of the \"webUI\" directory in the root directory on the server with the files of the custom WebUI"
 
+#: src/features/parallel-reader/components/LockstepMarkerEditor.tsx
+msgid "Use both markers"
+msgstr "Use both markers"
+
 #: src/features/parallel-reader/components/PageAnchorEditor.tsx
 msgid "Use page matches when one edition has extra or missing pages. Each match marks pages that show the same content."
 msgstr "Use page matches when one edition has extra or missing pages. Each match marks pages that show the same content."
@@ -4380,6 +4413,10 @@ msgstr "Use these positions"
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Username"
 msgstr "Username"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Uses matching start and end scenes despite different page counts or image sizes"
+msgstr "Uses matching start and end scenes despite different page counts or image sizes"
 
 #: src/features/settings/components/images/KeyValueItem.tsx
 msgid "Value"
