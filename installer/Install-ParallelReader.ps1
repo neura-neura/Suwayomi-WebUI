@@ -341,16 +341,32 @@ if (Test-LocalPort `$port) {
 function New-ParallelReaderShortcut {
     param([string]$Launcher)
 
+    $PowerShellPath = (Get-Command powershell.exe).Source
+    $Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $Launcher
+    $CreateShortcut = {
+        param([string]$ShortcutPath, [string]$Description)
+
+        if (Test-Path -LiteralPath $ShortcutPath -PathType Leaf) {
+            Remove-Item -LiteralPath $ShortcutPath -Force
+        }
+        [void](New-Item -ItemType Directory -Path (Split-Path -Parent $ShortcutPath) -Force)
+        $Shell = New-Object -ComObject WScript.Shell
+        $Shortcut = $Shell.CreateShortcut($ShortcutPath)
+        $Shortcut.TargetPath = $PowerShellPath
+        $Shortcut.Arguments = $Arguments
+        $Shortcut.WorkingDirectory = $InstallRoot
+        $Shortcut.Description = $Description
+        $Shortcut.Save()
+    }
+
     $Programs = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
-    [void](New-Item -ItemType Directory -Path $Programs -Force)
-    $ShortcutPath = Join-Path $Programs 'Suwayomi Parallel Reader.lnk'
-    $Shell = New-Object -ComObject WScript.Shell
-    $Shortcut = $Shell.CreateShortcut($ShortcutPath)
-    $Shortcut.TargetPath = (Get-Command powershell.exe).Source
-    $Shortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $Launcher
-    $Shortcut.WorkingDirectory = $InstallRoot
-    $Shortcut.Description = 'Instalacion independiente de Suwayomi con Parallel Reader integrado'
-    $Shortcut.Save()
+    & $CreateShortcut (Join-Path $Programs 'Suwayomi Parallel Reader.lnk') 'Suwayomi con Parallel Reader integrado'
+    & $CreateShortcut (Join-Path $Programs 'Suwayomi Launcher.lnk') 'Suwayomi con Parallel Reader integrado'
+
+    $Desktop = [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)
+    if (-not [string]::IsNullOrWhiteSpace($Desktop)) {
+        & $CreateShortcut (Join-Path $Desktop 'Suwayomi Launcher.lnk') 'Suwayomi con Parallel Reader integrado'
+    }
 }
 
 try {

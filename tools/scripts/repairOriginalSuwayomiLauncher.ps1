@@ -95,11 +95,11 @@ function New-UserLauncherShortcut {
     $Shortcut.Save()
 }
 
-$StartMenuShortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Suwayomi Launcher.lnk'
+$StartMenuShortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Suwayomi Original.lnk'
 New-UserLauncherShortcut -ShortcutPath $StartMenuShortcut
 $DesktopPath = [Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)
 if (-not [string]::IsNullOrWhiteSpace($DesktopPath)) {
-    New-UserLauncherShortcut -ShortcutPath (Join-Path $DesktopPath 'Suwayomi Launcher.lnk')
+    New-UserLauncherShortcut -ShortcutPath (Join-Path $DesktopPath 'Suwayomi Original.lnk')
 }
 
 if (-not $NoLaunch) {
