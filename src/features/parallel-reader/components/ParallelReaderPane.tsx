@@ -15,11 +15,12 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
+import type { MutableRefObject, RefObject } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { SpinnerImage } from '@/base/components/SpinnerImage.tsx';
 import type {
     ParallelPagePosition,
+    ParallelReaderPaneSettings,
     ParallelReaderSideSelection,
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { useParallelChapterPages } from '@/features/parallel-reader/hooks/useParallelChapterPages.ts';
@@ -29,15 +30,23 @@ import {
     PAGE_READING_POINT_RATIO,
     scrollToPagePosition,
 } from '@/features/parallel-reader/utils/PageVisibility.ts';
+import { ParallelReaderPaneControls } from '@/features/parallel-reader/components/ParallelReaderPaneControls.tsx';
+import { ScrollDirection } from '@/base/Base.types.ts';
+import { useAutomaticScrolling } from '@/base/hooks/useAutomaticScrolling.ts';
+import { ReaderPageScaleMode, ReaderScrollAmount } from '@/features/reader/Reader.types.ts';
 
 type ParallelReaderPaneProps = {
     initialPosition: ParallelPagePosition;
+    isAutoScrollActive: boolean;
+    onAutoScrollActiveChange: (isActive: boolean) => void;
     onPositionRestored?: () => void;
     onScroll: (position: ParallelPagePosition | undefined) => void;
+    onSettingsChange: (settings: ParallelReaderPaneSettings) => void;
     pageElementsRef: RefObject<(HTMLElement | null)[]>;
     readerLabel: string;
     scrollRef: RefObject<HTMLDivElement | null>;
     selection: Required<ParallelReaderSideSelection>;
+    settings: ParallelReaderPaneSettings;
     showAlignmentGuide?: boolean;
 };
 
@@ -45,12 +54,16 @@ const PAGE_PRELOAD_RADIUS = 3;
 
 export const ParallelReaderPane = ({
     initialPosition,
+    isAutoScrollActive,
+    onAutoScrollActiveChange,
     onPositionRestored,
     onScroll,
+    onSettingsChange,
     pageElementsRef,
     readerLabel,
     scrollRef,
     selection,
+    settings,
     showAlignmentGuide = false,
 }: ParallelReaderPaneProps) => {
     const { t } = useLingui();
@@ -59,6 +72,22 @@ export const ParallelReaderPane = ({
     const [currentPosition, setCurrentPosition] = useState<ParallelPagePosition>(initialPosition);
     const restoredSelectionIdRef = useRef<string | undefined>(undefined);
     const selectionId = `${source.id}:${manga.id}:${chapter.id}`;
+    const automaticScrolling = useAutomaticScrolling(
+        scrollRef as MutableRefObject<HTMLElement | null>,
+        settings.autoScroll.value,
+        ScrollDirection.Y,
+        ReaderScrollAmount.MEDIUM,
+        false,
+        settings.autoScroll.smooth,
+    );
+
+    useEffect(() => {
+        if (isAutoScrollActive && !automaticScrolling.isActive) {
+            automaticScrolling.start();
+        } else if (!isAutoScrollActive && automaticScrolling.isActive) {
+            automaticScrolling.cancel();
+        }
+    }, [automaticScrolling, isAutoScrollActive]);
 
     const updateVisiblePosition = useCallback(() => {
         if (!scrollRef.current) {
@@ -76,6 +105,48 @@ export const ParallelReaderPane = ({
     const handleScroll = useCallback(() => {
         onScroll(updateVisiblePosition());
     }, [onScroll, updateVisiblePosition]);
+
+    const goToPage = useCallback(
+        (pageIndex: number) => {
+            if (pageIndex < 0 || pageIndex >= pages.length || !scrollRef.current) {
+                return;
+            }
+
+            const nextPosition = { pageIndex, progress: 0 };
+            scrollToPagePosition(scrollRef.current, pageElementsRef.current, nextPosition);
+            setCurrentPosition(nextPosition);
+            onScroll(nextPosition);
+        },
+        [onScroll, pageElementsRef, pages.length, scrollRef],
+    );
+
+    const pageImageStyle = (() => {
+        const viewportHeight = 'calc(100dvh - 230px)';
+
+        switch (settings.pageScaleMode) {
+            case ReaderPageScaleMode.HEIGHT:
+                return {
+                    display: 'block',
+                    height: settings.shouldStretchPage ? viewportHeight : 'auto',
+                    maxHeight: viewportHeight,
+                    maxWidth: '100%',
+                    width: 'auto',
+                };
+            case ReaderPageScaleMode.SCREEN:
+                return {
+                    display: 'block',
+                    height: settings.shouldStretchPage ? viewportHeight : 'auto',
+                    maxHeight: viewportHeight,
+                    maxWidth: '100%',
+                    width: settings.shouldStretchPage ? '100%' : 'auto',
+                };
+            case ReaderPageScaleMode.ORIGINAL:
+                return { display: 'block', height: 'auto', maxWidth: 'none', width: 'auto' };
+            case ReaderPageScaleMode.WIDTH:
+            default:
+                return { display: 'block', height: 'auto', maxWidth: '100%', width: '100%' };
+        }
+    })();
 
     useEffect(() => {
         if (!pages.length || restoredSelectionIdRef.current === selectionId || !scrollRef.current) {
@@ -104,7 +175,13 @@ export const ParallelReaderPane = ({
                 onScroll={handleScroll}
                 tabIndex={0}
                 variant="outlined"
-                sx={{ height: '100%', minWidth: 0, overflow: 'auto', overscrollBehavior: 'contain' }}
+                sx={{
+                    height: '100%',
+                    minWidth: 0,
+                    overflow: 'auto',
+                    overscrollBehavior: 'contain',
+                    scrollSnapType: settings.readingMode === 'single' ? 'y mandatory' : undefined,
+                }}
             >
                 <Stack
                     component="header"
@@ -119,11 +196,23 @@ export const ParallelReaderPane = ({
                         p: 1.5,
                     }}
                 >
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
                         <Chip color="primary" label={readerLabel} size="small" variant="outlined" />
-                        <Typography component="h2" noWrap variant="subtitle1">
-                            {manga.title}
-                        </Typography>
+                        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', minWidth: 0 }}>
+                            <Typography component="h2" noWrap variant="subtitle1">
+                                {manga.title}
+                            </Typography>
+                            <ParallelReaderPaneControls
+                                currentPosition={currentPosition}
+                                isAutoScrollActive={isAutoScrollActive}
+                                onAutoScrollActiveChange={onAutoScrollActiveChange}
+                                onGoToPage={goToPage}
+                                onSettingsChange={onSettingsChange}
+                                pageCount={pages.length}
+                                readerLabel={readerLabel}
+                                settings={settings}
+                            />
+                        </Stack>
                     </Stack>
                     <Typography color="text.secondary" noWrap variant="body2">
                         {chapter.name} · {t`Page ${currentPosition.pageIndex + 1} of ${pages.length}`}
@@ -147,7 +236,13 @@ export const ParallelReaderPane = ({
                     </Alert>
                 )}
                 {!loading && !error && !pages.length && <Alert severity="info">{t`No pages found`}</Alert>}
-                <Stack sx={{ alignItems: 'center', bgcolor: 'common.black' }}>
+                <Stack
+                    sx={{
+                        alignItems: 'center',
+                        bgcolor: 'common.black',
+                        gap: `${settings.pageGap}px`,
+                    }}
+                >
                     {pages.map((page, index) => (
                         <Box
                             key={page}
@@ -156,7 +251,13 @@ export const ParallelReaderPane = ({
                                 const pageElements = pageElementsRef.current;
                                 pageElements[index] = element;
                             }}
-                            sx={{ display: 'grid', minHeight: '65vh', width: '100%', placeItems: 'center' }}
+                            sx={{
+                                display: 'grid',
+                                minHeight: settings.readingMode === 'single' ? 'calc(100dvh - 230px)' : 0,
+                                placeItems: 'center',
+                                scrollSnapAlign: settings.readingMode === 'single' ? 'start' : undefined,
+                                width: '100%',
+                            }}
                         >
                             <SpinnerImage
                                 alt={t`Page ${index + 1}`}
@@ -164,8 +265,11 @@ export const ParallelReaderPane = ({
                                 shouldLoad={Math.abs(index - currentPosition.pageIndex) <= PAGE_PRELOAD_RADIUS}
                                 shouldDecode
                                 onLoad={updateVisiblePosition}
-                                spinnerStyle={{ minHeight: '65vh', width: '100%' }}
-                                imgStyle={{ display: 'block', height: 'auto', maxWidth: '100%', width: '100%' }}
+                                spinnerStyle={{
+                                    minHeight: settings.readingMode === 'single' ? 'calc(100dvh - 230px)' : '65vh',
+                                    width: '100%',
+                                }}
+                                imgStyle={pageImageStyle}
                                 hideImgStyle={{ minHeight: 0 }}
                             />
                         </Box>

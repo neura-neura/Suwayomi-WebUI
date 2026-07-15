@@ -535,6 +535,7 @@ msgstr "Auto"
 msgid "Auto download while reading"
 msgstr "Auto download while reading"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/auto-scroll/settings/quick-setting/ReaderNavBarDesktopAutoScroll.tsx
 #: src/features/reader/overlay/navigation/mobile/quick-settings/ReaderBottomBarMobileQuickSettings.tsx
 msgid "Auto scroll"
@@ -985,6 +986,10 @@ msgstr "Completed"
 msgid "Compression level"
 msgstr "Compression level"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Configure {readerLabel}"
+msgstr "Configure {readerLabel}"
+
 #: src/features/settings/components/images/Processing.tsx
 msgid "Connect timeout"
 msgstr "Connect timeout"
@@ -1014,6 +1019,10 @@ msgstr ""
 "Continue reading\n"
 "#{chapterNumber} — {name}\n"
 "{scanlator}"
+
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Continuous"
+msgstr "Continuous"
 
 #: src/features/reader/settings/behaviour/ReaderBehaviourSettings.tsx
 msgid "Continuous chapter display"
@@ -1661,6 +1670,10 @@ msgstr "Entry \"{0} ({1}; {sourceTitle} ({2}))\" in invalid state \"{3}\""
 msgid "Entry \"{id}\" not found"
 msgstr "Entry \"{id}\" not found"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Equal widths"
+msgstr "Equal widths"
+
 #: src/base/components/downloads/DownloadStateIndicator.tsx
 #: src/base/components/feedback/SnackbarWithDescription.tsx
 #: src/features/settings/Settings.constants.ts
@@ -1711,6 +1724,10 @@ msgstr "Exclude: {excludedSyncDataText}"
 #: src/features/migration/Migration.constants.ts
 msgid "Excluded"
 msgstr "Excluded"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Exit fullscreen"
+msgstr "Exit fullscreen"
 
 #: src/features/reader/hotkeys/settings/components/ReaderSettingHotkey.tsx
 #: src/features/reader/overlay/navigation/components/ReaderExitButton.tsx
@@ -1839,14 +1856,17 @@ msgstr "Finished"
 msgid "Finished:"
 msgstr "Finished:"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Fit height"
 msgstr "Fit height"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Fit screen"
 msgstr "Fit screen"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Fit width"
 msgstr "Fit width"
@@ -1900,8 +1920,16 @@ msgid "Fourth to last read chapter"
 msgstr "Fourth to last read chapter"
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "From this point, both readers will move by exactly the same scroll distance."
-msgstr "From this point, both readers will move by exactly the same scroll distance."
+msgid "From this point, both readers follow the same relative content. Different image resolutions will not cause drift."
+msgstr "From this point, both readers follow the same relative content. Different image resolutions will not cause drift."
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Fullscreen"
+msgstr "Fullscreen"
+
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Gap between pages"
+msgstr "Gap between pages"
 
 #: src/features/library/screens/LibrarySettings.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
@@ -2071,6 +2099,10 @@ msgstr "Image processing"
 msgid "Image serve processing"
 msgstr "Image serve processing"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Image size"
+msgstr "Image size"
+
 #: src/features/settings/screens/ImagesSettings.tsx
 #: src/features/settings/screens/Settings.tsx
 msgid "Images"
@@ -2228,6 +2260,10 @@ msgstr "Keep previous and upcoming chapters visible while reading in continuous 
 msgid "Keep remote"
 msgstr "Keep remote"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Keeps the same point in each page, even if image sizes differ"
+msgstr "Keeps the same point in each page, even if image sizes differ"
+
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Keybinds"
 msgstr "Keybinds"
@@ -2313,6 +2349,7 @@ msgstr "Left page"
 msgid "Left side"
 msgstr "Left side"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/settings/layout/components/ReaderSettingReadingDirection.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Left to right"
@@ -2676,6 +2713,7 @@ msgstr "Next"
 msgid "Next chapter"
 msgstr "Next chapter"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/hotkeys/settings/components/ReaderSettingHotkey.tsx
 #: src/features/reader/overlay/navigation/desktop/components/ReaderNavBarDesktopPageNavigation.tsx
 msgid "Next page"
@@ -2817,6 +2855,10 @@ msgstr "Oneshot"
 msgid "Ongoing"
 msgstr "Ongoing"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Only one reader auto-scrolls at a time. When the readers are linked, it moves the other reader too."
+msgstr "Only one reader auto-scrolls at a time. When the readers are linked, it moves the other reader too."
+
 #: src/features/migration/Migration.constants.ts
 msgid "Only outdated matches found"
 msgstr "Only outdated matches found"
@@ -2878,6 +2920,7 @@ msgstr "Options"
 msgid "Orange Juice"
 msgstr "Orange Juice"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Original size"
 msgstr "Original size"
@@ -2896,13 +2939,16 @@ msgstr "Overlay"
 msgid "Overlay mode"
 msgstr "Overlay mode"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/overlay/navigation/desktop/components/ReaderNavBarDesktopPageNavigation.tsx
 msgid "Page"
 msgstr "Page"
 
 #. placeholder {0}: index + 1
+#. placeholder {0}: pageIndex + 1
 #: src/features/parallel-reader/components/ParallelChapterPagesPreview.tsx
 #: src/features/parallel-reader/components/ParallelReaderPane.tsx
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 msgid "Page {0}"
 msgstr "Page {0}"
 
@@ -2939,6 +2985,10 @@ msgstr "Parallel source requests"
 msgid "Password"
 msgstr "Password"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Pause auto scroll"
+msgstr "Pause auto scroll"
+
 #: src/features/navigation-bar/NavigationBar.constants.ts
 msgid "Paused — {count} remaining"
 msgstr "Paused — {count} remaining"
@@ -2950,6 +3000,10 @@ msgstr "Pending…"
 #: src/features/settings/components/koreaderSync/KoreaderSyncSettings.tsx
 msgid "Percentage Tolerance"
 msgstr "Percentage Tolerance"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Pin controls"
+msgstr "Pin controls"
 
 #: src/features/browse/sources/components/SourceCard.tsx
 msgid "Pin source"
@@ -2999,6 +3053,7 @@ msgstr "Previous"
 msgid "Previous chapter"
 msgstr "Previous chapter"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/hotkeys/settings/components/ReaderSettingHotkey.tsx
 #: src/features/reader/overlay/navigation/desktop/components/ReaderNavBarDesktopPageNavigation.tsx
 msgid "Previous page"
@@ -3066,6 +3121,7 @@ msgstr "Reader B"
 msgid "Reader width"
 msgstr "Reader width"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/overlay/navigation/desktop/quick-settings/components/ReaderNavBarDesktopReadingDirection.tsx
 #: src/features/reader/settings/layout/components/ReaderSettingReadingDirection.tsx
 msgid "Reading direction"
@@ -3075,6 +3131,10 @@ msgstr "Reading direction"
 #: src/features/reader/settings/layout/components/ReaderSettingReadingMode.tsx
 msgid "Reading mode"
 msgstr "Reading mode"
+
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Reading style"
+msgstr "Reading style"
 
 #: src/features/library/components/LibraryOptionsPanel.tsx
 msgid "Recently added"
@@ -3226,6 +3286,7 @@ msgstr "Right page"
 msgid "Right side"
 msgstr "Right side"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/settings/layout/components/ReaderSettingReadingDirection.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Right to left"
@@ -3236,8 +3297,8 @@ msgid "Rosegold"
 msgstr "Rosegold"
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Same movement from a point you choose"
-msgstr "Same movement from a point you choose"
+msgid "Same content movement"
+msgstr "Same content movement"
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 msgid "Same page and position"
@@ -3246,10 +3307,6 @@ msgstr "Same page and position"
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 msgid "Same relative progress"
 msgstr "Same relative progress"
-
-#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Same scroll distance"
-msgstr "Same scroll distance"
 
 #: src/features/settings/screens/ImageProcessingSetting.tsx
 #: src/features/theme/components/CreateThemeDialog.tsx
@@ -3391,6 +3448,10 @@ msgstr "Second"
 #: src/features/downloads/components/DeleteChaptersWhileReadingSetting.tsx
 msgid "Second to last read chapter"
 msgstr "Second to last read chapter"
+
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Seconds"
+msgstr "Seconds"
 
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "See <0>FlareSolverr</0> for information on how to set it up"
@@ -3562,6 +3623,10 @@ msgstr "Show only unread chapters"
 msgid "Show page number"
 msgstr "Show page number"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Show reader controls"
+msgstr "Show reader controls"
+
 #: src/features/reader/settings/behaviour/ReaderBehaviourSettings.tsx
 msgid "Show reading mode"
 msgstr "Show reading mode"
@@ -3595,9 +3660,14 @@ msgstr "Shows a dialog in case the version of the server has changed"
 msgid "Simple Login"
 msgstr "Simple Login"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
 msgid "Single page"
 msgstr "Single page"
+
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Single page keeps one page in view. Continuous scroll keeps the full chapter flowing."
+msgstr "Single page keeps one page in view. Continuous scroll keeps the full chapter flowing."
 
 #: src/features/settings/screens/ServerSettings.tsx
 msgid "Skip chapter metadata feed"
@@ -3623,6 +3693,7 @@ msgstr "Small"
 msgid "Smartphone_Name-1 | length: 16, chars: letters, numbers, -, _"
 msgstr "Smartphone_Name-1 | length: 16, chars: letters, numbers, -, _"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/auto-scroll/settings/ReaderSettingAutoScroll.tsx
 msgid "Smooth auto scrolling"
 msgstr "Smooth auto scrolling"
@@ -3701,6 +3772,10 @@ msgstr "Standard"
 msgid "Start"
 msgstr "Start"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Start auto scroll"
+msgstr "Start auto scroll"
+
 #: src/features/tracker/components/cards/TrackerActiveCard.tsx
 msgid "Start date"
 msgstr "Start date"
@@ -3760,6 +3835,10 @@ msgstr "Stop global update"
 #: src/features/reader/settings/layout/components/ReaderSettingStretchPage.tsx
 msgid "Stretch small pages"
 msgstr "Stretch small pages"
+
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "Stretch smaller pages"
+msgstr "Stretch smaller pages"
 
 #: src/features/category/components/CreateOrEditCategoryDialog.tsx
 #: src/features/source/browse/components/SourceOptions.tsx
@@ -3968,6 +4047,10 @@ msgstr "There is no next chapter"
 msgid "There is no previous chapter"
 msgstr "There is no previous chapter"
 
+#: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
+msgid "These controls only change this reader."
+msgstr "These controls only change this reader."
+
 #: src/features/migration/components/MigrationBulkSearchOptionsDialog.tsx
 msgid "These options are slow and dangerous and may lead to restrictions from sources"
 msgstr "These options are slow and dangerous and may lead to restrictions from sources"
@@ -4161,6 +4244,10 @@ msgstr "Unknown"
 #: src/features/migration/MigrationManager.ts
 msgid "Unknown source"
 msgstr "Unknown source"
+
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Unpin controls"
+msgstr "Unpin controls"
 
 #: src/features/browse/sources/components/SourceCard.tsx
 msgid "Unpin source"

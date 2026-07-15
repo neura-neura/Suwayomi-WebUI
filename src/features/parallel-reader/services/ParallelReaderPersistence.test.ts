@@ -55,7 +55,7 @@ test('sanitizes persisted dimensions and positions', () => {
     assert.deepEqual(result.anchors, [{ leftPage: 2, rightPage: 3 }]);
     assert.equal(result.isSyncEnabled, false);
     assert.equal(result.syncMode, 'percentage');
-    assert.equal(result.version, 2);
+    assert.equal(result.version, 3);
 });
 
 test('restores calibrated lockstep synchronization', () => {
@@ -71,7 +71,7 @@ test('restores calibrated lockstep synchronization', () => {
 
     assert.equal(result.lockstepCalibrated, true);
     assert.equal(result.syncMode, 'lockstep');
-    assert.equal(result.version, 2);
+    assert.equal(result.version, 3);
 });
 
 test('sanitizes persisted percentage offsets', () => {
@@ -85,7 +85,7 @@ test('sanitizes persisted percentage offsets', () => {
     assert.equal(sanitizeParallelReaderAlignment({ percentageOffset: '0.5' }, 10, 10).percentageOffset, 0);
 });
 
-test('supplies version 2 calibration defaults for legacy alignment data', () => {
+test('supplies version 3 pane-control defaults for legacy alignment data', () => {
     const result = sanitizeParallelReaderAlignment(
         {
             anchors: [{ leftPage: 2, rightPage: 3 }],
@@ -98,7 +98,52 @@ test('supplies version 2 calibration defaults for legacy alignment data', () => 
 
     assert.equal(result.lockstepCalibrated, false);
     assert.equal(result.percentageOffset, 0);
-    assert.equal(result.version, 2);
+    assert.equal(result.leftReaderSettings.readingMode, 'continuous');
+    assert.equal(result.leftReaderSettings.pageScaleMode, 0);
+    assert.equal(result.rightReaderSettings.autoScroll.value, 5);
+    assert.equal(result.version, 3);
+});
+
+test('sanitizes independent settings for both reader panes', () => {
+    const result = sanitizeParallelReaderAlignment(
+        {
+            leftReaderSettings: {
+                autoScroll: { smooth: false, value: 0.1 },
+                pageGap: 100,
+                pageScaleMode: 3,
+                readingDirection: 1,
+                readingMode: 'single',
+                shouldStretchPage: true,
+            },
+            rightReaderSettings: {
+                autoScroll: { smooth: 'no', value: Number.POSITIVE_INFINITY },
+                pageGap: -10,
+                pageScaleMode: 99,
+                readingDirection: -1,
+                readingMode: 'not-a-mode',
+                shouldStretchPage: 'yes',
+            },
+        },
+        10,
+        10,
+    );
+
+    assert.deepEqual(result.leftReaderSettings, {
+        autoScroll: { smooth: false, value: 0.5 },
+        pageGap: 20,
+        pageScaleMode: 3,
+        readingDirection: 1,
+        readingMode: 'single',
+        shouldStretchPage: true,
+    });
+    assert.deepEqual(result.rightReaderSettings, {
+        autoScroll: { smooth: true, value: 5 },
+        pageGap: 0,
+        pageScaleMode: 0,
+        readingDirection: 0,
+        readingMode: 'continuous',
+        shouldStretchPage: false,
+    });
 });
 
 test('discards a contradictory persisted anchor map', () => {

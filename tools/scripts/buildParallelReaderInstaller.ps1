@@ -21,7 +21,12 @@ param(
     [string]$ServerMsiPath,
 
     [Parameter()]
-    [switch]$SkipWebUIBuild
+    [switch]$SkipWebUIBuild,
+
+    # Builds a lightweight patcher which detects an already installed server,
+    # copies it into the independent Parallel Reader location and adds the UI.
+    [Parameter()]
+    [switch]$PatcherOnly
 )
 
 Set-StrictMode -Version Latest
@@ -220,7 +225,11 @@ else {
     $OutputDir = Get-FullPath -Path $OutputDir -BasePath $repoRoot
 }
 
-if (-not [string]::IsNullOrWhiteSpace($ServerMsiPath)) {
+if ($PatcherOnly -and -not [string]::IsNullOrWhiteSpace($ServerMsiPath)) {
+    throw 'ServerMsiPath cannot be used with -PatcherOnly because the patcher does not bundle a server MSI.'
+}
+
+if (-not $PatcherOnly -and -not [string]::IsNullOrWhiteSpace($ServerMsiPath)) {
     $ServerMsiPath = Get-FullPath -Path $ServerMsiPath -BasePath (Get-Location).Path
     if (-not (Test-Path -LiteralPath $ServerMsiPath -PathType Leaf)) {
         throw "The supplied server MSI does not exist: $ServerMsiPath"
@@ -237,7 +246,7 @@ foreach ($requiredSource in @($bootstrapSourcePath, $noticesSourcePath, $license
     }
 }
 
-if (-not $PinnedServerMsiSha256.ContainsKey($ServerVersion)) {
+if (-not $PatcherOnly -and -not $PinnedServerMsiSha256.ContainsKey($ServerVersion)) {
     throw "There is no pinned Suwayomi-Server MSI checksum for version $ServerVersion. Add a reviewed checksum to `$PinnedServerMsiSha256 before building that version."
 }
 
@@ -252,7 +261,11 @@ $sfxModulePath = Join-Path $stagingRoot 'bin\7zSD.sfx'
 $temporaryInstallerPath = Join-Path $stagingRoot 'installer.tmp'
 $serverMsiFileName = "Suwayomi-Server-v$ServerVersion-windows-x64.msi"
 $payloadMsiPath = Join-Path $payloadDir $serverMsiFileName
-$installerFileName = "Suwayomi-Parallel-Reader-Setup-v$Version.exe"
+$installerFileName = if ($PatcherOnly) {
+    "Suwayomi-Parallel-Reader-Patcher-v$Version.exe"
+} else {
+    "Suwayomi-Parallel-Reader-Setup-v$Version.exe"
+}
 $installerOutputPath = Join-Path $OutputDir $installerFileName
 $checksumsOutputPath = Join-Path $OutputDir 'SHA256SUMS.txt'
 
@@ -310,9 +323,10 @@ try {
 
     Write-Utf8WithoutBom -Path (Join-Path $payloadWebUiDir 'revision') -Content "parallel-reader-v$Version`n"
     Copy-Item -LiteralPath $bootstrapSourcePath -Destination (Join-Path $payloadDir 'Install-ParallelReader.ps1') -Force
+    $bootstrapArguments = if ($PatcherOnly) { ' -SkipMsi' } else { '' }
     $bootstrapLauncher = @(
         '@echo off'
-        'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-ParallelReader.ps1"'
+        ('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-ParallelReader.ps1"' + $bootstrapArguments)
         'exit /b %ERRORLEVEL%'
         ''
     ) -join "`r`n"
@@ -324,21 +338,23 @@ try {
         -RepositoryRoot $repoRoot `
         -OutputPath (Join-Path $payloadDir 'WEBUI-DEPENDENCY-LICENSES.txt')
 
-    if ([string]::IsNullOrWhiteSpace($ServerMsiPath)) {
-        $downloadUrl = "https://github.com/Suwayomi/Suwayomi-Server/releases/download/v$ServerVersion/$serverMsiFileName"
-        Write-Host "Downloading the official Suwayomi-Server MSI v$ServerVersion..."
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-WebRequest -Uri $downloadUrl -OutFile $payloadMsiPath -UseBasicParsing
-    }
-    else {
-        Write-Host "Using the supplied Suwayomi-Server MSI: $ServerMsiPath"
-        Copy-Item -LiteralPath $ServerMsiPath -Destination $payloadMsiPath -Force
-    }
+    if (-not $PatcherOnly) {
+        if ([string]::IsNullOrWhiteSpace($ServerMsiPath)) {
+            $downloadUrl = "https://github.com/Suwayomi/Suwayomi-Server/releases/download/v$ServerVersion/$serverMsiFileName"
+            Write-Host "Downloading the official Suwayomi-Server MSI v$ServerVersion..."
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $payloadMsiPath -UseBasicParsing
+        }
+        else {
+            Write-Host "Using the supplied Suwayomi-Server MSI: $ServerMsiPath"
+            Copy-Item -LiteralPath $ServerMsiPath -Destination $payloadMsiPath -Force
+        }
 
-    $expectedMsiSha256 = $PinnedServerMsiSha256[$ServerVersion]
-    $actualMsiSha256 = (Get-FileHash -LiteralPath $payloadMsiPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($actualMsiSha256 -ne $expectedMsiSha256) {
-        throw "Suwayomi-Server MSI SHA-256 mismatch. Expected $expectedMsiSha256 but received $actualMsiSha256."
+        $expectedMsiSha256 = $PinnedServerMsiSha256[$ServerVersion]
+        $actualMsiSha256 = (Get-FileHash -LiteralPath $payloadMsiPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualMsiSha256 -ne $expectedMsiSha256) {
+            throw "Suwayomi-Server MSI SHA-256 mismatch. Expected $expectedMsiSha256 but received $actualMsiSha256."
+        }
     }
 
     Write-Host 'Compressing the installer payload...'
@@ -353,10 +369,15 @@ try {
         Pop-Location
     }
 
+    $beginPrompt = if ($PatcherOnly) {
+        'BeginPrompt="This will patch an installed Suwayomi-Server into an independent Parallel Reader installation. Continue?"'
+    } else {
+        'BeginPrompt="This will install Suwayomi Parallel Reader and its bundled Suwayomi-Server. Continue?"'
+    }
     $sfxConfiguration = @(
         ';!@Install@!UTF-8!'
         "Title=`"Suwayomi Parallel Reader v$Version`""
-        'BeginPrompt="This will install Suwayomi Parallel Reader and its bundled Suwayomi-Server. Continue?"'
+        $beginPrompt
         'ExecuteFile="Install-ParallelReader.cmd"'
         ';!@InstallEnd@!'
         ''
@@ -387,7 +408,19 @@ try {
     Move-Item -LiteralPath $temporaryInstallerPath -Destination $installerOutputPath -Force
 
     $installerSha256 = (Get-FileHash -LiteralPath $installerOutputPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    Write-Utf8WithoutBom -Path $checksumsOutputPath -Content "$installerSha256  $installerFileName`n"
+    $checksumLines = New-Object System.Collections.Generic.List[string]
+    if (Test-Path -LiteralPath $checksumsOutputPath -PathType Leaf) {
+        $existingChecksumContent = [IO.File]::ReadAllText($checksumsOutputPath)
+        foreach ($match in [regex]::Matches($existingChecksumContent, '(?im)[a-f0-9]{64}\s{2}[^\s]+\.exe')) {
+            $line = $match.Value
+            if ($line -and $line -notmatch ('\s' + [regex]::Escape($installerFileName) + '$')) {
+                $checksumLines.Add($line)
+            }
+        }
+    }
+    $checksumLines.Add("$installerSha256  $installerFileName")
+    $checksumsContent = $checksumLines -join "`n"
+    Write-Utf8WithoutBom -Path $checksumsOutputPath -Content ($checksumsContent + "`n")
 
     Write-Host ''
     Write-Host 'Installer created successfully:'

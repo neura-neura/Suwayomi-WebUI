@@ -9,8 +9,6 @@
 import type { ParallelReaderSide } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { coerceIn } from '@/lib/HelperFunctions.ts';
 
-export type LockstepOrigin = { leftTop: number; rightTop: number };
-
 export const getScrollableHeight = (element: HTMLElement): number =>
     Math.max(0, element.scrollHeight - element.clientHeight);
 
@@ -27,17 +25,4 @@ export const getPercentageTargetTop = (
     const sourceProgress = getScrollProgress(sourceTop, sourceScrollableHeight);
     const targetProgress = sourceProgress + (sourceSide === 'left' ? percentageOffset : -percentageOffset);
     return coerceIn(targetProgress, 0, 1) * targetScrollableHeight;
-};
-
-export const getLockstepTargetTop = (
-    sourceTop: number,
-    targetScrollableHeight: number,
-    origin: LockstepOrigin,
-    sourceSide: ParallelReaderSide,
-): number => {
-    const targetTop =
-        sourceSide === 'left'
-            ? origin.rightTop + (sourceTop - origin.leftTop)
-            : origin.leftTop + (sourceTop - origin.rightTop);
-    return coerceIn(targetTop, 0, targetScrollableHeight);
 };

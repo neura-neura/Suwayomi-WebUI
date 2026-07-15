@@ -14,13 +14,9 @@ import type {
     ParallelReaderSide,
     ParallelScrollSyncMode,
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
-import { scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
-import { mapPagePosition } from '@/features/parallel-reader/utils/PageMapping.ts';
-import {
-    getLockstepTargetTop,
-    getPercentageTargetTop,
-    getScrollableHeight,
-} from '@/features/parallel-reader/utils/ScrollSync.ts';
+import { getVisiblePagePosition, scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
+import { mapContentRelativePosition, mapPagePosition } from '@/features/parallel-reader/utils/PageMapping.ts';
+import { getPercentageTargetTop, getScrollableHeight } from '@/features/parallel-reader/utils/ScrollSync.ts';
 
 export const useParallelScrollSync = (
     leftRef: RefObject<HTMLElement | null>,
@@ -37,7 +33,7 @@ export const useParallelScrollSync = (
 ) => {
     const animationFrameRef = useRef<number | undefined>(undefined);
     const pendingProgrammaticTopRef = useRef<Partial<Record<ParallelReaderSide, number>>>({});
-    const lockstepOriginRef = useRef<{ leftTop: number; rightTop: number } | undefined>(undefined);
+    const lockstepOriginRef = useRef<Record<ParallelReaderSide, ParallelPagePosition> | undefined>(undefined);
     const positionsRef = useRef<Record<ParallelReaderSide, ParallelPagePosition | undefined>>({
         left: undefined,
         right: undefined,
@@ -53,20 +49,49 @@ export const useParallelScrollSync = (
         [leftPageElementsRef, leftRef, rightPageElementsRef, rightRef],
     );
 
-    const calibrateLockstep = useCallback(() => {
-        if (!leftRef.current || !rightRef.current) {
-            return false;
-        }
+    const calibrateLockstep = useCallback(
+        (providedPositions?: Partial<Record<ParallelReaderSide, ParallelPagePosition>>) => {
+            if (!leftRef.current || !rightRef.current) {
+                return false;
+            }
 
-        cancelAnimationFrame(animationFrameRef.current ?? 0);
-        pendingProgrammaticTopRef.current = {};
-        lockstepOriginRef.current = {
-            leftTop: leftRef.current.scrollTop,
-            rightTop: rightRef.current.scrollTop,
-        };
-        onLockstepCalibrated(true);
-        return true;
-    }, [leftRef, onLockstepCalibrated, rightRef]);
+            const leftPosition =
+                providedPositions?.left ??
+                positionsRef.current.left ??
+                getVisiblePagePosition(leftRef.current, leftPageElementsRef.current);
+            const rightPosition =
+                providedPositions?.right ??
+                positionsRef.current.right ??
+                getVisiblePagePosition(rightRef.current, rightPageElementsRef.current);
+            if (!leftPosition || !rightPosition) {
+                return false;
+            }
+
+            cancelAnimationFrame(animationFrameRef.current ?? 0);
+            pendingProgrammaticTopRef.current = {};
+            positionsRef.current = { left: leftPosition, right: rightPosition };
+            lockstepOriginRef.current = {
+                left: leftPosition,
+                right: rightPosition,
+            };
+            onLockstepCalibrated(true);
+            return true;
+        },
+        [leftPageElementsRef, leftRef, onLockstepCalibrated, rightPageElementsRef, rightRef],
+    );
+
+    const scrollTargetToPagePosition = useCallback(
+        (
+            target: HTMLElement,
+            targetSide: ParallelReaderSide,
+            targetPages: (HTMLElement | null)[],
+            position: ParallelPagePosition,
+        ) => {
+            scrollToPagePosition(target, targetPages, position);
+            pendingProgrammaticTopRef.current[targetSide] = target.scrollTop;
+        },
+        [],
+    );
 
     const writeTargetTop = useCallback((target: HTMLElement, targetSide: ParallelReaderSide, top: number) => {
         target.scrollTo({ top });
@@ -85,8 +110,9 @@ export const useParallelScrollSync = (
                 switch (mode) {
                     case 'page':
                         if (sourcePosition && targetPages.length) {
-                            scrollToPagePosition(
+                            scrollTargetToPagePosition(
                                 target,
+                                targetSide,
                                 targetPages,
                                 mapPagePosition(
                                     sourcePosition,
@@ -95,7 +121,6 @@ export const useParallelScrollSync = (
                                     targetPages.length,
                                 ),
                             );
-                            pendingProgrammaticTopRef.current[targetSide] = target.scrollTop;
                         }
                         break;
                     case 'percentage':
@@ -113,30 +138,23 @@ export const useParallelScrollSync = (
                         break;
                     case 'lockstep': {
                         const origin = lockstepOriginRef.current;
-                        if (!lockstepCalibrated || !origin) {
+                        if (!lockstepCalibrated || !origin || !sourcePosition || !targetPages.length) {
                             break;
                         }
 
-                        const unclampedTop =
-                            sourceSide === 'left'
-                                ? origin.rightTop + (source.scrollTop - origin.leftTop)
-                                : origin.leftTop + (source.scrollTop - origin.rightTop);
-                        const desiredTop = getLockstepTargetTop(
-                            source.scrollTop,
-                            getScrollableHeight(target),
-                            origin,
-                            sourceSide,
+                        scrollTargetToPagePosition(
+                            target,
+                            targetSide,
+                            targetPages,
+                            mapContentRelativePosition(
+                                sourcePosition,
+                                origin[sourceSide],
+                                origin[targetSide],
+                                anchors,
+                                sourceSide === 'left' ? 'left-to-right' : 'right-to-left',
+                                targetPages.length,
+                            ),
                         );
-                        writeTargetTop(target, targetSide, desiredTop);
-                        if (
-                            Math.abs(unclampedTop - desiredTop) > 0.5 ||
-                            Math.abs(target.scrollTop - desiredTop) > 0.5
-                        ) {
-                            lockstepOriginRef.current = {
-                                leftTop: leftRef.current?.scrollTop ?? 0,
-                                rightTop: rightRef.current?.scrollTop ?? 0,
-                            };
-                        }
                         break;
                     }
                     default: {
@@ -146,7 +164,7 @@ export const useParallelScrollSync = (
                 }
             });
         },
-        [anchors, getElements, leftRef, lockstepCalibrated, mode, percentageOffset, rightRef, writeTargetTop],
+        [anchors, getElements, lockstepCalibrated, mode, percentageOffset, scrollTargetToPagePosition, writeTargetTop],
     );
 
     const handleScroll = useCallback(

@@ -6,6 +6,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import type { ReaderPageScaleMode, ReadingDirection } from '@/features/reader/Reader.types.ts';
+
 export type ParallelReaderSourceSelection = {
     id: string;
     displayName: string;
@@ -42,15 +44,30 @@ export type PageAnchor = {
 
 export type ParallelScrollSyncMode = 'page' | 'percentage' | 'lockstep';
 export type ParallelReaderSide = 'left' | 'right';
+export type ParallelReaderReadingMode = 'continuous' | 'single';
+
+export type ParallelReaderPaneSettings = {
+    autoScroll: {
+        smooth: boolean;
+        value: number;
+    };
+    pageGap: number;
+    pageScaleMode: ReaderPageScaleMode;
+    readingDirection: ReadingDirection;
+    readingMode: ParallelReaderReadingMode;
+    shouldStretchPage: boolean;
+};
 
 export type ParallelReaderAlignmentState = {
     anchors: PageAnchor[];
     isSyncEnabled: boolean;
+    leftReaderSettings: ParallelReaderPaneSettings;
     leftPosition: ParallelPagePosition;
     leftWidth: number;
     lockstepCalibrated: boolean;
     percentageOffset: number;
+    rightReaderSettings: ParallelReaderPaneSettings;
     rightPosition: ParallelPagePosition;
     syncMode: ParallelScrollSyncMode;
-    version: 2;
+    version: 3;
 };

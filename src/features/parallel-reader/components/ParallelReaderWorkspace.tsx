@@ -8,9 +8,14 @@
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
+import PushPinIcon from '@mui/icons-material/PushPin';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import TuneIcon from '@mui/icons-material/Tune';
+import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -28,6 +33,8 @@ import { useLingui } from '@lingui/react/macro';
 import type {
     PageAnchor,
     ParallelPagePosition,
+    ParallelReaderPaneSettings,
+    ParallelReaderSide,
     ParallelReaderSideSelection,
     ParallelScrollSyncMode,
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
@@ -60,6 +67,7 @@ export const ParallelReaderWorkspace = ({
     onSwap,
 }: ParallelReaderWorkspaceProps) => {
     const { t } = useLingui();
+    const workspaceRef = useRef<HTMLDivElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const leftScrollRef = useRef<HTMLDivElement | null>(null);
     const rightScrollRef = useRef<HTMLDivElement | null>(null);
@@ -67,6 +75,7 @@ export const ParallelReaderWorkspace = ({
     const rightPageElementsRef = useRef<(HTMLElement | null)[]>([]);
     const syncBeforeAdjustmentRef = useRef(true);
     const wasResizingRef = useRef(false);
+    const controlsHideTimeoutRef = useRef<number | undefined>(undefined);
     const alignmentKey = getParallelReaderAlignmentKey(leftSelection, rightSelection);
     const [persistedAlignment, setPersistedAlignment] = useLocalStorage<unknown>(
         alignmentKey,
@@ -89,8 +98,15 @@ export const ParallelReaderWorkspace = ({
     );
     const [syncMode, setSyncMode] = useState<ParallelScrollSyncMode>(initialAlignmentRef.current.syncMode);
     const [anchors, setAnchors] = useState<PageAnchor[]>(initialAlignmentRef.current.anchors);
+    const [leftReaderSettings, setLeftReaderSettings] = useState<ParallelReaderPaneSettings>(
+        initialAlignmentRef.current.leftReaderSettings,
+    );
     const [percentageOffset, setPercentageOffset] = useState(initialAlignmentRef.current.percentageOffset);
     const [lockstepCalibrated, setLockstepCalibrated] = useState(initialAlignmentRef.current.lockstepCalibrated);
+    const [rightReaderSettings, setRightReaderSettings] = useState<ParallelReaderPaneSettings>(
+        initialAlignmentRef.current.rightReaderSettings,
+    );
+    const [activeAutoScrollSide, setActiveAutoScrollSide] = useState<ParallelReaderSide>();
     const [isAdjustingAlignment, setIsAdjustingAlignment] = useState(
         initialAlignmentRef.current.syncMode === 'lockstep' && !initialAlignmentRef.current.lockstepCalibrated,
     );
@@ -98,6 +114,9 @@ export const ParallelReaderWorkspace = ({
     const [restoredSides, setRestoredSides] = useState(0);
     const [leftPosition, setLeftPosition] = useState<ParallelPagePosition>(initialAlignmentRef.current.leftPosition);
     const [rightPosition, setRightPosition] = useState<ParallelPagePosition>(initialAlignmentRef.current.rightPosition);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [areFullscreenControlsVisible, setAreFullscreenControlsVisible] = useState(true);
+    const [areFullscreenControlsPinned, setAreFullscreenControlsPinned] = useState(false);
     const handleLockstepCalibrated = useCallback((calibrated: boolean) => setLockstepCalibrated(calibrated), []);
     const { onLeftScroll, onRightScroll, alignFromLeft, alignFromRight, calibrateLockstep } = useParallelScrollSync(
         leftScrollRef,
@@ -139,23 +158,26 @@ export const ParallelReaderWorkspace = ({
             alignment.syncMode === 'lockstep' && !alignment.lockstepCalibrated ? false : alignment.isSyncEnabled,
         );
         setIsAdjustingAlignment(alignment.syncMode === 'lockstep' && !alignment.lockstepCalibrated);
+        setActiveAutoScrollSide(undefined);
+        setLeftReaderSettings(alignment.leftReaderSettings);
         setLeftPosition(alignment.leftPosition);
         setLeftWidth(alignment.leftWidth);
         setLockstepCalibrated(alignment.lockstepCalibrated);
         setPercentageOffset(alignment.percentageOffset);
+        setRightReaderSettings(alignment.rightReaderSettings);
         setRightPosition(alignment.rightPosition);
         setSyncMode(alignment.syncMode);
     }, [alignmentKey, persistedAlignment, leftSelection.chapter.pageCount, rightSelection.chapter.pageCount]);
 
     useEffect(() => {
         if (restoredSides === 3 && syncMode === 'lockstep' && lockstepCalibrated) {
-            calibrateLockstep();
+            calibrateLockstep({ left: leftPosition, right: rightPosition });
         }
     }, [calibrateLockstep, lockstepCalibrated, restoredSides, syncMode]);
 
     useEffect(() => {
         if (wasResizingRef.current && !isResizing && syncMode === 'lockstep' && lockstepCalibrated) {
-            calibrateLockstep();
+            calibrateLockstep({ left: leftPosition, right: rightPosition });
         }
         wasResizingRef.current = isResizing;
     }, [calibrateLockstep, isResizing, lockstepCalibrated, syncMode]);
@@ -166,13 +188,15 @@ export const ParallelReaderWorkspace = ({
                 setPersistedAlignment({
                     anchors,
                     isSyncEnabled,
+                    leftReaderSettings,
                     leftPosition,
                     leftWidth,
                     lockstepCalibrated,
                     percentageOffset,
+                    rightReaderSettings,
                     rightPosition,
                     syncMode,
-                    version: 2,
+                    version: 3,
                 }),
             300,
         );
@@ -182,13 +206,56 @@ export const ParallelReaderWorkspace = ({
         alignmentKey,
         anchors,
         isSyncEnabled,
+        leftReaderSettings,
         leftPosition,
         leftWidth,
         lockstepCalibrated,
         percentageOffset,
+        rightReaderSettings,
         rightPosition,
         syncMode,
     ]);
+
+    useEffect(() => {
+        if (syncMode !== 'lockstep' || !lockstepCalibrated) {
+            return () => {};
+        }
+
+        const frame = requestAnimationFrame(() => calibrateLockstep());
+        return () => cancelAnimationFrame(frame);
+    }, [
+        calibrateLockstep,
+        leftReaderSettings.pageGap,
+        leftReaderSettings.pageScaleMode,
+        leftReaderSettings.readingMode,
+        leftReaderSettings.shouldStretchPage,
+        lockstepCalibrated,
+        rightReaderSettings.pageGap,
+        rightReaderSettings.pageScaleMode,
+        rightReaderSettings.readingMode,
+        rightReaderSettings.shouldStretchPage,
+        syncMode,
+        isFullscreen,
+    ]);
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isWorkspaceFullscreen = document.fullscreenElement === workspaceRef.current;
+            setIsFullscreen(isWorkspaceFullscreen);
+            setAreFullscreenControlsVisible(true);
+
+            if (!isWorkspaceFullscreen) {
+                setAreFullscreenControlsPinned(false);
+            }
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            window.clearTimeout(controlsHideTimeoutRef.current);
+        };
+    }, []);
 
     useEffect(() => {
         if (!isResizing) {
@@ -236,6 +303,16 @@ export const ParallelReaderWorkspace = ({
         onRightScroll(position);
     };
 
+    const handleAutoScrollActiveChange = (side: ParallelReaderSide, isActive: boolean) => {
+        setActiveAutoScrollSide((activeSide) => {
+            if (isActive) {
+                return side;
+            }
+
+            return activeSide === side ? undefined : activeSide;
+        });
+    };
+
     const startAlignmentAdjustment = () => {
         syncBeforeAdjustmentRef.current = isSyncEnabled;
         setAlignmentError(false);
@@ -271,7 +348,7 @@ export const ParallelReaderWorkspace = ({
                 getScrollProgress(rightScrollRef.current.scrollTop, getScrollableHeight(rightScrollRef.current)) -
                     getScrollProgress(leftScrollRef.current.scrollTop, getScrollableHeight(leftScrollRef.current)),
             );
-        } else if (!calibrateLockstep()) {
+        } else if (!calibrateLockstep({ left: leftPosition, right: rightPosition })) {
             return;
         }
 
@@ -319,171 +396,296 @@ export const ParallelReaderWorkspace = ({
         }
     };
 
+    const setEqualReaderWidths = () => {
+        setLeftWidth(50);
+
+        if (syncMode === 'lockstep' && lockstepCalibrated) {
+            requestAnimationFrame(() => calibrateLockstep({ left: leftPosition, right: rightPosition }));
+        }
+    };
+
+    const showFullscreenControls = () => {
+        window.clearTimeout(controlsHideTimeoutRef.current);
+        setAreFullscreenControlsVisible(true);
+    };
+
+    const hideFullscreenControls = () => {
+        if (!isFullscreen || areFullscreenControlsPinned) {
+            return;
+        }
+
+        window.clearTimeout(controlsHideTimeoutRef.current);
+        controlsHideTimeoutRef.current = window.setTimeout(() => {
+            setAreFullscreenControlsVisible(false);
+        }, 650);
+    };
+
+    const toggleFullscreen = async () => {
+        try {
+            if (document.fullscreenElement === workspaceRef.current) {
+                await document.exitFullscreen();
+                return;
+            }
+
+            await workspaceRef.current?.requestFullscreen();
+        } catch {
+            // The browser can reject fullscreen mode when it is not triggered by a user gesture.
+        }
+    };
+
+    const toggleFullscreenControlsPinned = () => {
+        const nextPinned = !areFullscreenControlsPinned;
+        setAreFullscreenControlsPinned(nextPinned);
+
+        if (nextPinned) {
+            showFullscreenControls();
+        }
+    };
+
     return (
-        <Stack spacing={1} sx={{ height: 'calc(100dvh - 80px)', minHeight: 480, p: 1 }}>
-            <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}
-            >
-                <Button onClick={onClose} startIcon={<ArrowBackIcon />}>
-                    {t`Change chapters`}
-                </Button>
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <Chip
-                        color={isSyncEnabled ? 'success' : 'default'}
-                        label={isSyncEnabled ? t`Scrolling together` : t`Independent scrolling`}
-                        size="small"
-                        variant="outlined"
-                    />
-                    <Button
-                        onClick={() => {
-                            const swappedAnchors = anchors
-                                .map(({ leftPage, rightPage }) => ({ leftPage: rightPage, rightPage: leftPage }))
-                                .toSorted((first, second) => first.leftPage - second.leftPage);
-                            AppStorage.local.setItem(getParallelReaderAlignmentKey(rightSelection, leftSelection), {
-                                anchors: swappedAnchors,
-                                isSyncEnabled: syncMode === 'lockstep' ? false : isSyncEnabled,
-                                leftPosition: rightPosition,
-                                leftWidth: 100 - leftWidth,
-                                lockstepCalibrated: false,
-                                percentageOffset: -percentageOffset,
-                                rightPosition: leftPosition,
-                                syncMode,
-                                version: 2,
-                            });
-                            onSwap();
-                        }}
-                        startIcon={<CompareArrowsIcon />}
-                    >
-                        {t`Swap readers`}
-                    </Button>
-                </Stack>
-            </Stack>
-            <Paper variant="outlined" sx={{ p: 1.5 }}>
-                <Stack spacing={1.5}>
-                    <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={1}
-                        sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}
-                    >
-                        <Box>
-                            <Typography component="h2" variant="h6">
-                                {t`How should the readers move together?`}
-                            </Typography>
-                            <Typography color="text.secondary" variant="body2">
-                                {t`Scroll either reader. The other one follows using the method you choose below.`}
-                            </Typography>
-                        </Box>
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={isSyncEnabled}
-                                    disabled={isAdjustingAlignment}
-                                    onChange={(event) => handleSyncToggle(event.target.checked)}
-                                />
-                            }
-                            label={t`Scroll together`}
-                        />
-                    </Stack>
-                    <ToggleButtonGroup
-                        aria-label={t`Synchronization method`}
-                        color="primary"
-                        exclusive
-                        fullWidth
-                        onChange={handleModeChange}
-                        value={syncMode}
-                    >
-                        <ToggleButton sx={{ textTransform: 'none' }} value="page">
-                            <Stack sx={{ alignItems: 'flex-start', textAlign: 'left' }}>
-                                <Typography sx={{ fontWeight: 'medium' }}>{t`Matching pages`}</Typography>
-                                <Typography color="text.secondary" variant="caption">
-                                    {t`Same page and position`}
-                                </Typography>
-                            </Stack>
-                        </ToggleButton>
-                        <ToggleButton sx={{ textTransform: 'none' }} value="percentage">
-                            <Stack sx={{ alignItems: 'flex-start', textAlign: 'left' }}>
-                                <Typography sx={{ fontWeight: 'medium' }}>{t`Chapter progress`}</Typography>
-                                <Typography color="text.secondary" variant="caption">
-                                    {t`Same relative progress`}
-                                </Typography>
-                            </Stack>
-                        </ToggleButton>
-                        <ToggleButton sx={{ textTransform: 'none' }} value="lockstep">
-                            <Stack sx={{ alignItems: 'flex-start', textAlign: 'left' }}>
-                                <Typography sx={{ fontWeight: 'medium' }}>{t`Same scroll distance`}</Typography>
-                                <Typography color="text.secondary" variant="caption">
-                                    {t`Same movement from a point you choose`}
-                                </Typography>
-                            </Stack>
-                        </ToggleButton>
-                    </ToggleButtonGroup>
-                    {isAdjustingAlignment ? (
-                        <Alert severity="warning">
-                            <Stack spacing={1}>
-                                <Typography>
-                                    {t`Synchronization is paused. Move each reader independently until the same scene crosses the orange guide.`}
-                                </Typography>
-                                <Typography variant="body2">
-                                    {syncMode === 'page' &&
-                                        t`This saves the two current pages as a match for page synchronization.`}
-                                    {syncMode === 'percentage' &&
-                                        t`This saves the difference between the two current chapter positions.`}
-                                    {syncMode === 'lockstep' &&
-                                        t`From this point, both readers will move by exactly the same scroll distance.`}
-                                </Typography>
-                                {alignmentError && (
-                                    <Typography color="error">
-                                        {t`That page match conflicts with an existing match. Edit the page matches below and try again.`}
-                                    </Typography>
-                                )}
-                                <Stack direction="row" spacing={1}>
-                                    <Button onClick={useCurrentPositions} variant="contained">
-                                        {t`Use these positions`}
-                                    </Button>
-                                    <Button onClick={cancelAlignmentAdjustment}>{t`Cancel`}</Button>
-                                </Stack>
-                            </Stack>
-                        </Alert>
-                    ) : (
-                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-                            <Button onClick={startAlignmentAdjustment} startIcon={<TuneIcon />} variant="contained">
-                                {t`Adjust alignment`}
-                            </Button>
-                            {syncMode !== 'lockstep' && (
-                                <>
-                                    <Button
-                                        disabled={!isSyncEnabled}
-                                        onClick={() => alignFromLeft(leftPosition)}
-                                        startIcon={<KeyboardDoubleArrowRightIcon />}
-                                    >
-                                        {t`Align from Reader A`}
-                                    </Button>
-                                    <Button
-                                        disabled={!isSyncEnabled}
-                                        onClick={() => alignFromRight(rightPosition)}
-                                        startIcon={<KeyboardDoubleArrowLeftIcon />}
-                                    >
-                                        {t`Align from Reader B`}
-                                    </Button>
-                                </>
-                            )}
-                        </Stack>
-                    )}
-                </Stack>
-            </Paper>
-            {syncMode === 'page' && (
-                <PageAnchorEditor
-                    anchors={anchors}
-                    leftPageCount={leftSelection.chapter.pageCount}
-                    leftPosition={leftPosition}
-                    onChange={setAnchors}
-                    onGoTo={goToAnchor}
-                    rightPageCount={rightSelection.chapter.pageCount}
-                    rightPosition={rightPosition}
+        <Stack
+            ref={workspaceRef}
+            spacing={isFullscreen ? 0 : 1}
+            sx={{
+                height: isFullscreen ? '100dvh' : 'calc(100dvh - 80px)',
+                minHeight: isFullscreen ? 0 : 480,
+                overflow: isFullscreen ? 'hidden' : undefined,
+                p: isFullscreen ? 0 : 1,
+                position: 'relative',
+                bgcolor: isFullscreen ? 'background.default' : undefined,
+            }}
+        >
+            {isFullscreen && !areFullscreenControlsVisible && !areFullscreenControlsPinned && (
+                <Box
+                    aria-label={t`Show reader controls`}
+                    onMouseEnter={showFullscreenControls}
+                    sx={{ height: 20, position: 'absolute', top: 0, right: 0, left: 0, zIndex: 3 }}
                 />
             )}
+            <Box
+                onMouseEnter={showFullscreenControls}
+                onMouseLeave={hideFullscreenControls}
+                sx={{
+                    position: isFullscreen ? 'absolute' : 'relative',
+                    top: 0,
+                    right: 0,
+                    left: 0,
+                    zIndex: 2,
+                    transform: isFullscreen && !areFullscreenControlsVisible ? 'translateY(-100%)' : 'translateY(0)',
+                    transition: isFullscreen ? 'transform 200ms ease-out' : undefined,
+                    pointerEvents: isFullscreen && !areFullscreenControlsVisible ? 'none' : 'auto',
+                }}
+            >
+                <Stack
+                    spacing={1}
+                    sx={{
+                        maxHeight: isFullscreen ? 'calc(100dvh - 12px)' : undefined,
+                        overflowY: isFullscreen ? 'auto' : undefined,
+                        bgcolor: isFullscreen ? 'background.default' : undefined,
+                        boxShadow: isFullscreen ? 8 : undefined,
+                        p: isFullscreen ? 1 : 0,
+                    }}
+                >
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}
+                    >
+                        <Button onClick={onClose} startIcon={<ArrowBackIcon />}>
+                            {t`Change chapters`}
+                        </Button>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                            <Button
+                                onClick={toggleFullscreen}
+                                startIcon={isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+                            >
+                                {isFullscreen ? t`Exit fullscreen` : t`Fullscreen`}
+                            </Button>
+                            {isFullscreen && (
+                                <Button
+                                    onClick={toggleFullscreenControlsPinned}
+                                    startIcon={areFullscreenControlsPinned ? <PushPinIcon /> : <PushPinOutlinedIcon />}
+                                >
+                                    {areFullscreenControlsPinned ? t`Unpin controls` : t`Pin controls`}
+                                </Button>
+                            )}
+                            <Chip
+                                color={isSyncEnabled ? 'success' : 'default'}
+                                label={isSyncEnabled ? t`Scrolling together` : t`Independent scrolling`}
+                                size="small"
+                                variant="outlined"
+                            />
+                            <Button
+                                disabled={leftWidth === 50}
+                                onClick={setEqualReaderWidths}
+                                startIcon={<VerticalSplitIcon />}
+                            >
+                                {t`Equal widths`}
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    const swappedAnchors = anchors
+                                        .map(({ leftPage, rightPage }) => ({
+                                            leftPage: rightPage,
+                                            rightPage: leftPage,
+                                        }))
+                                        .toSorted((first, second) => first.leftPage - second.leftPage);
+                                    AppStorage.local.setItem(
+                                        getParallelReaderAlignmentKey(rightSelection, leftSelection),
+                                        {
+                                            anchors: swappedAnchors,
+                                            isSyncEnabled: syncMode === 'lockstep' ? false : isSyncEnabled,
+                                            leftReaderSettings: rightReaderSettings,
+                                            leftPosition: rightPosition,
+                                            leftWidth: 100 - leftWidth,
+                                            lockstepCalibrated: false,
+                                            percentageOffset: -percentageOffset,
+                                            rightReaderSettings: leftReaderSettings,
+                                            rightPosition: leftPosition,
+                                            syncMode,
+                                            version: 3,
+                                        },
+                                    );
+                                    onSwap();
+                                }}
+                                startIcon={<CompareArrowsIcon />}
+                            >
+                                {t`Swap readers`}
+                            </Button>
+                        </Stack>
+                    </Stack>
+                    <Paper variant="outlined" sx={{ p: 1.5 }}>
+                        <Stack spacing={1.5}>
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                spacing={1}
+                                sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}
+                            >
+                                <Box>
+                                    <Typography component="h2" variant="h6">
+                                        {t`How should the readers move together?`}
+                                    </Typography>
+                                    <Typography color="text.secondary" variant="body2">
+                                        {t`Scroll either reader. The other one follows using the method you choose below.`}
+                                    </Typography>
+                                </Box>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={isSyncEnabled}
+                                            disabled={isAdjustingAlignment}
+                                            onChange={(event) => handleSyncToggle(event.target.checked)}
+                                        />
+                                    }
+                                    label={t`Scroll together`}
+                                />
+                            </Stack>
+                            <ToggleButtonGroup
+                                aria-label={t`Synchronization method`}
+                                color="primary"
+                                exclusive
+                                fullWidth
+                                onChange={handleModeChange}
+                                value={syncMode}
+                            >
+                                <ToggleButton sx={{ textTransform: 'none' }} value="page">
+                                    <Stack sx={{ alignItems: 'flex-start', textAlign: 'left' }}>
+                                        <Typography sx={{ fontWeight: 'medium' }}>{t`Matching pages`}</Typography>
+                                        <Typography color="text.secondary" variant="caption">
+                                            {t`Same page and position`}
+                                        </Typography>
+                                    </Stack>
+                                </ToggleButton>
+                                <ToggleButton sx={{ textTransform: 'none' }} value="percentage">
+                                    <Stack sx={{ alignItems: 'flex-start', textAlign: 'left' }}>
+                                        <Typography sx={{ fontWeight: 'medium' }}>{t`Chapter progress`}</Typography>
+                                        <Typography color="text.secondary" variant="caption">
+                                            {t`Same relative progress`}
+                                        </Typography>
+                                    </Stack>
+                                </ToggleButton>
+                                <ToggleButton sx={{ textTransform: 'none' }} value="lockstep">
+                                    <Stack sx={{ alignItems: 'flex-start', textAlign: 'left' }}>
+                                        <Typography
+                                            sx={{ fontWeight: 'medium' }}
+                                        >{t`Same content movement`}</Typography>
+                                        <Typography color="text.secondary" variant="caption">
+                                            {t`Keeps the same point in each page, even if image sizes differ`}
+                                        </Typography>
+                                    </Stack>
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                            {isAdjustingAlignment ? (
+                                <Alert severity="warning">
+                                    <Stack spacing={1}>
+                                        <Typography>
+                                            {t`Synchronization is paused. Move each reader independently until the same scene crosses the orange guide.`}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {syncMode === 'page' &&
+                                                t`This saves the two current pages as a match for page synchronization.`}
+                                            {syncMode === 'percentage' &&
+                                                t`This saves the difference between the two current chapter positions.`}
+                                            {syncMode === 'lockstep' &&
+                                                t`From this point, both readers follow the same relative content. Different image resolutions will not cause drift.`}
+                                        </Typography>
+                                        {alignmentError && (
+                                            <Typography color="error">
+                                                {t`That page match conflicts with an existing match. Edit the page matches below and try again.`}
+                                            </Typography>
+                                        )}
+                                        <Stack direction="row" spacing={1}>
+                                            <Button onClick={useCurrentPositions} variant="contained">
+                                                {t`Use these positions`}
+                                            </Button>
+                                            <Button onClick={cancelAlignmentAdjustment}>{t`Cancel`}</Button>
+                                        </Stack>
+                                    </Stack>
+                                </Alert>
+                            ) : (
+                                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <Button
+                                        onClick={startAlignmentAdjustment}
+                                        startIcon={<TuneIcon />}
+                                        variant="contained"
+                                    >
+                                        {t`Adjust alignment`}
+                                    </Button>
+                                    {syncMode !== 'lockstep' && (
+                                        <>
+                                            <Button
+                                                disabled={!isSyncEnabled}
+                                                onClick={() => alignFromLeft(leftPosition)}
+                                                startIcon={<KeyboardDoubleArrowRightIcon />}
+                                            >
+                                                {t`Align from Reader A`}
+                                            </Button>
+                                            <Button
+                                                disabled={!isSyncEnabled}
+                                                onClick={() => alignFromRight(rightPosition)}
+                                                startIcon={<KeyboardDoubleArrowLeftIcon />}
+                                            >
+                                                {t`Align from Reader B`}
+                                            </Button>
+                                        </>
+                                    )}
+                                </Stack>
+                            )}
+                        </Stack>
+                    </Paper>
+                    {syncMode === 'page' && (
+                        <PageAnchorEditor
+                            anchors={anchors}
+                            leftPageCount={leftSelection.chapter.pageCount}
+                            leftPosition={leftPosition}
+                            onChange={setAnchors}
+                            onGoTo={goToAnchor}
+                            rightPageCount={rightSelection.chapter.pageCount}
+                            rightPosition={rightPosition}
+                        />
+                    )}
+                </Stack>
+            </Box>
             <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflowX: 'auto' }}>
                 <Box
                     ref={containerRef}
@@ -500,8 +702,12 @@ export const ParallelReaderWorkspace = ({
                         onScroll={handleLeftScroll}
                         pageElementsRef={leftPageElementsRef}
                         initialPosition={leftPosition}
+                        isAutoScrollActive={activeAutoScrollSide === 'left'}
+                        onAutoScrollActiveChange={(isActive) => handleAutoScrollActiveChange('left', isActive)}
                         scrollRef={leftScrollRef}
                         selection={leftSelection}
+                        settings={leftReaderSettings}
+                        onSettingsChange={setLeftReaderSettings}
                         showAlignmentGuide={isAdjustingAlignment}
                     />
                     <Box
@@ -527,8 +733,12 @@ export const ParallelReaderWorkspace = ({
                         onScroll={handleRightScroll}
                         pageElementsRef={rightPageElementsRef}
                         initialPosition={rightPosition}
+                        isAutoScrollActive={activeAutoScrollSide === 'right'}
+                        onAutoScrollActiveChange={(isActive) => handleAutoScrollActiveChange('right', isActive)}
                         scrollRef={rightScrollRef}
                         selection={rightSelection}
+                        settings={rightReaderSettings}
+                        onSettingsChange={setRightReaderSettings}
                         showAlignmentGuide={isAdjustingAlignment}
                     />
                 </Box>

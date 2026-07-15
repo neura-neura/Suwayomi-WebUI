@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { PageAnchor } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import {
+    mapContentRelativePosition,
     mapPageIndex,
     mapPagePosition,
     upsertPageAnchor,
@@ -52,6 +53,48 @@ test('preserves progress inside the mapped page', () => {
         pageIndex: 11,
         progress: 0.42,
     });
+});
+
+test('maps relative content movement instead of copying rendered pixels', () => {
+    const result = mapContentRelativePosition(
+        { pageIndex: 4, progress: 0.75 },
+        { pageIndex: 4, progress: 0.25 },
+        { pageIndex: 7, progress: 0.4 },
+        [],
+        'left-to-right',
+        20,
+    );
+
+    assert.equal(result.pageIndex, 7);
+    assert.ok(Math.abs(result.progress - 0.9) < 0.000001);
+});
+
+test('uses page anchors while preserving movement relative to the aligned content', () => {
+    const result = mapContentRelativePosition(
+        { pageIndex: 11, progress: 0.6 },
+        { pageIndex: 10, progress: 0.5 },
+        { pageIndex: 11, progress: 0.5 },
+        anchors,
+        'left-to-right',
+        30,
+    );
+
+    assert.equal(result.pageIndex, 12);
+    assert.ok(Math.abs(result.progress - 0.6) < 0.000001);
+});
+
+test('allows content-relative movement to reach the end of the final page', () => {
+    assert.deepEqual(
+        mapContentRelativePosition(
+            { pageIndex: 4, progress: 1 },
+            { pageIndex: 4, progress: 0 },
+            { pageIndex: 4, progress: 0 },
+            [],
+            'left-to-right',
+            5,
+        ),
+        { pageIndex: 4, progress: 1 },
+    );
 });
 
 test('validates contradictory and out of range anchors', () => {

@@ -9,25 +9,49 @@
 import type {
     ParallelPagePosition,
     ParallelReaderAlignmentState,
+    ParallelReaderPaneSettings,
     ParallelReaderSideSelection,
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { validatePageAnchors } from '@/features/parallel-reader/utils/PageMapping.ts';
 import { coerceIn } from '@/lib/HelperFunctions.ts';
+import { ReaderPageScaleMode, ReadingDirection } from '@/features/reader/Reader.types.ts';
+
+const AUTO_SCROLL_SPEED = { default: 5, max: 60, min: 0.5 } as const;
+const PAGE_GAP = { default: 5, max: 20, min: 0 } as const;
 
 export const PARALLEL_READER_LEFT_SELECTION_KEY = 'parallel-reader:left-selection:v1';
 export const PARALLEL_READER_RIGHT_SELECTION_KEY = 'parallel-reader:right-selection:v1';
 export const PARALLEL_READER_OPEN_KEY = 'parallel-reader:open:v1';
 
+export const DEFAULT_PARALLEL_READER_PANE_SETTINGS: ParallelReaderPaneSettings = {
+    autoScroll: {
+        smooth: true,
+        value: AUTO_SCROLL_SPEED.default,
+    },
+    pageGap: PAGE_GAP.default,
+    pageScaleMode: ReaderPageScaleMode.WIDTH,
+    readingDirection: ReadingDirection.LTR,
+    readingMode: 'continuous',
+    shouldStretchPage: false,
+};
+
+const createDefaultPaneSettings = (): ParallelReaderPaneSettings => ({
+    ...DEFAULT_PARALLEL_READER_PANE_SETTINGS,
+    autoScroll: { ...DEFAULT_PARALLEL_READER_PANE_SETTINGS.autoScroll },
+});
+
 export const DEFAULT_PARALLEL_READER_ALIGNMENT: ParallelReaderAlignmentState = {
     anchors: [],
     isSyncEnabled: true,
+    leftReaderSettings: createDefaultPaneSettings(),
     leftPosition: { pageIndex: 0, progress: 0 },
     leftWidth: 50,
     lockstepCalibrated: false,
     percentageOffset: 0,
+    rightReaderSettings: createDefaultPaneSettings(),
     rightPosition: { pageIndex: 0, progress: 0 },
     syncMode: 'page',
-    version: 2,
+    version: 3,
 };
 
 const getSelectionIdentity = ({ source, manga, chapter }: Required<ParallelReaderSideSelection>): string =>
@@ -55,6 +79,40 @@ const sanitizePosition = (value: unknown, pageCount: number): ParallelPagePositi
     };
 };
 
+const sanitizePaneSettings = (value: unknown): ParallelReaderPaneSettings => {
+    if (!value || typeof value !== 'object') {
+        return createDefaultPaneSettings();
+    }
+
+    const settings = value as Partial<ParallelReaderPaneSettings>;
+    const { autoScroll } = settings;
+
+    return {
+        autoScroll: {
+            smooth: typeof autoScroll?.smooth === 'boolean' ? autoScroll.smooth : true,
+            value:
+                typeof autoScroll?.value === 'number' && Number.isFinite(autoScroll.value)
+                    ? coerceIn(autoScroll.value, AUTO_SCROLL_SPEED.min, AUTO_SCROLL_SPEED.max)
+                    : AUTO_SCROLL_SPEED.default,
+        },
+        pageGap:
+            typeof settings.pageGap === 'number' && Number.isFinite(settings.pageGap)
+                ? coerceIn(settings.pageGap, PAGE_GAP.min, PAGE_GAP.max)
+                : PAGE_GAP.default,
+        pageScaleMode:
+            settings.pageScaleMode !== undefined && Object.values(ReaderPageScaleMode).includes(settings.pageScaleMode)
+                ? settings.pageScaleMode!
+                : ReaderPageScaleMode.WIDTH,
+        readingDirection:
+            settings.readingDirection !== undefined &&
+            Object.values(ReadingDirection).includes(settings.readingDirection)
+                ? settings.readingDirection!
+                : ReadingDirection.LTR,
+        readingMode: settings.readingMode === 'single' ? 'single' : 'continuous',
+        shouldStretchPage: typeof settings.shouldStretchPage === 'boolean' ? settings.shouldStretchPage : false,
+    };
+};
+
 export const sanitizeParallelReaderAlignment = (
     value: unknown,
     leftPageCount: number,
@@ -71,6 +129,7 @@ export const sanitizeParallelReaderAlignment = (
     return {
         anchors: validAnchors,
         isSyncEnabled: typeof state.isSyncEnabled === 'boolean' ? state.isSyncEnabled : true,
+        leftReaderSettings: sanitizePaneSettings(state.leftReaderSettings),
         leftPosition: sanitizePosition(state.leftPosition, leftPageCount),
         leftWidth: coerceIn(typeof state.leftWidth === 'number' ? state.leftWidth : 50, 25, 75),
         lockstepCalibrated: typeof state.lockstepCalibrated === 'boolean' ? state.lockstepCalibrated : false,
@@ -78,8 +137,9 @@ export const sanitizeParallelReaderAlignment = (
             typeof state.percentageOffset === 'number' && Number.isFinite(state.percentageOffset)
                 ? coerceIn(state.percentageOffset, -1, 1)
                 : 0,
+        rightReaderSettings: sanitizePaneSettings(state.rightReaderSettings),
         rightPosition: sanitizePosition(state.rightPosition, rightPageCount),
         syncMode: ['page', 'percentage', 'lockstep'].includes(state.syncMode ?? '') ? state.syncMode! : 'page',
-        version: 2,
+        version: 3,
     };
 };

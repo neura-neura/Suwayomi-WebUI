@@ -95,3 +95,47 @@ export const mapPagePosition = (
     pageIndex: mapPageIndex(position.pageIndex, anchors, direction, targetPageCount),
     progress: coerceIn(position.progress, 0, 1),
 });
+
+const getPositionCoordinate = ({ pageIndex, progress }: ParallelPagePosition): number =>
+    pageIndex + coerceIn(progress, 0, 1);
+
+const getPositionFromCoordinate = (coordinate: number, pageCount: number): ParallelPagePosition => {
+    if (pageCount <= 0) {
+        return { pageIndex: 0, progress: 0 };
+    }
+
+    const boundedCoordinate = coerceIn(coordinate, 0, pageCount);
+    if (boundedCoordinate === pageCount) {
+        return { pageIndex: pageCount - 1, progress: 1 };
+    }
+    const pageIndex = Math.floor(boundedCoordinate);
+
+    return {
+        pageIndex,
+        progress: coerceIn(boundedCoordinate - pageIndex, 0, 1),
+    };
+};
+
+/**
+ * Maps movement relative to an alignment point in page-content coordinates.
+ *
+ * A page's progress is independent from its rendered pixel height, so moving
+ * from 20% to 30% through a high-resolution image also moves the other reader
+ * from 20% to 30% through its lower-resolution counterpart.
+ */
+export const mapContentRelativePosition = (
+    sourcePosition: ParallelPagePosition,
+    sourceOrigin: ParallelPagePosition,
+    targetOrigin: ParallelPagePosition,
+    anchors: PageAnchor[],
+    direction: PageMappingDirection,
+    targetPageCount: number,
+): ParallelPagePosition => {
+    const mappedSourcePosition = mapPagePosition(sourcePosition, anchors, direction, targetPageCount);
+    const mappedSourceOrigin = mapPagePosition(sourceOrigin, anchors, direction, targetPageCount);
+    const targetCoordinate =
+        getPositionCoordinate(targetOrigin) +
+        (getPositionCoordinate(mappedSourcePosition) - getPositionCoordinate(mappedSourceOrigin));
+
+    return getPositionFromCoordinate(targetCoordinate, targetPageCount);
+};
