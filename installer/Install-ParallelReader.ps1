@@ -292,57 +292,195 @@ function Install-ParallelReaderNotices {
     foreach ($FileName in @('LICENSE', 'THIRD-PARTY-NOTICES.txt', 'WEBUI-DEPENDENCY-LICENSES.txt')) {
         $SourcePath = Join-Path $PSScriptRoot $FileName
         if (-not (Test-Path -LiteralPath $SourcePath -PathType Leaf)) {
+            # The release package stores notices beside this script; the source
+            # checkout keeps the canonical copies at the repository root.
+            $DevelopmentSource = Join-Path (Split-Path -Parent $PSScriptRoot) $FileName
+            if (Test-Path -LiteralPath $DevelopmentSource -PathType Leaf) {
+                $SourcePath = $DevelopmentSource
+            }
+        }
+        if (-not (Test-Path -LiteralPath $SourcePath -PathType Leaf)) {
             throw "El paquete no contiene el aviso legal requerido: $FileName"
         }
         Copy-Item -LiteralPath $SourcePath -Destination (Join-Path $NoticesRoot $FileName) -Force
     }
 }
 
-function Write-ParallelReaderLauncher {
+function Replace-LauncherAsciiString {
     param(
-        [Parameter(Mandatory = $true)][string]$LauncherPath,
-        [Parameter(Mandatory = $true)][string]$ServerRoot,
-        [Parameter(Mandatory = $true)][string]$ServerDataRoot,
-        [Parameter(Mandatory = $true)][int]$ServerPort
+        [Parameter(Mandatory = $true)][byte[]]$Bytes,
+        [Parameter(Mandatory = $true)][string]$Find,
+        [Parameter(Mandatory = $true)][string]$Replace
     )
 
-    $EscapedServerRoot = $ServerRoot.Replace("'", "''")
-    $EscapedDataRoot = $ServerDataRoot.Replace("'", "''")
-    $Launcher = @"
-`$ErrorActionPreference = 'Stop'
-`$serverRoot = '$EscapedServerRoot'
-`$dataRoot = '$EscapedDataRoot'
-`$port = $ServerPort
-`$java = Join-Path `$serverRoot 'jre\bin\javaw.exe'
-if (-not (Test-Path -LiteralPath `$java -PathType Leaf)) { `$java = Join-Path `$serverRoot 'jre\bin\java.exe' }
-`$serverJar = Join-Path `$serverRoot 'bin\Suwayomi-Server.jar'
-if (-not (Test-Path -LiteralPath `$java -PathType Leaf) -or -not (Test-Path -LiteralPath `$serverJar -PathType Leaf)) {
-    throw 'No se encontro la instalacion independiente de Suwayomi Parallel Reader. Ejecuta el parche otra vez.'
+    $FindBytes = [Text.Encoding]::UTF8.GetBytes($Find)
+    $ReplaceBytes = [Text.Encoding]::UTF8.GetBytes($Replace)
+    if ($FindBytes.Length -ne $ReplaceBytes.Length) {
+        throw "La sustitucion del launcher debe mantener la misma longitud: $Find"
+    }
+
+    $Replacements = 0
+    for ($Index = 0; $Index -le $Bytes.Length - $FindBytes.Length; $Index += 1) {
+        $Matches = $true
+        for ($Offset = 0; $Offset -lt $FindBytes.Length; $Offset += 1) {
+            if ($Bytes[$Index + $Offset] -ne $FindBytes[$Offset]) {
+                $Matches = $false
+                break
+            }
+        }
+        if ($Matches) {
+            [Array]::Copy($ReplaceBytes, 0, $Bytes, $Index, $ReplaceBytes.Length)
+            $Replacements += 1
+            $Index += $FindBytes.Length - 1
+        }
+    }
+    return $Replacements
 }
-function Test-LocalPort([int]`$testPort) {
-    `$client = New-Object Net.Sockets.TcpClient
-    try { `$client.Connect('127.0.0.1', `$testPort); return `$true } catch { return `$false } finally { `$client.Dispose() }
+
+function Update-ParallelReaderGraphicalLauncher {
+    param([Parameter(Mandatory = $true)][string]$ServerRoot)
+
+    $LauncherJar = Join-Path $ServerRoot 'Suwayomi-Launcher.jar'
+    $ReplacementsToApply = @(
+        [PSCustomObject]@{
+            Find = 'Tachidesk'
+            Replace = 'ParallelR'
+        },
+        [PSCustomObject]@{
+            Find = 'suwayomi/launcher'
+            Replace = 'suwayomi/parallel'
+        }
+    )
+    if (-not (Test-Path -LiteralPath $LauncherJar -PathType Leaf)) {
+        throw "No se encontro el launcher grafico de Suwayomi: $LauncherJar"
+    }
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $Archive = [IO.Compression.ZipFile]::OpenRead($LauncherJar)
+    $TemporaryJar = $LauncherJar + '.parallel-reader.tmp'
+    try {
+        $PatchedEntries = @{}
+        $Changed = $false
+        $FoundAppDirectory = $false
+        $FoundPreferenceNode = $false
+        foreach ($Entry in $Archive.Entries | Where-Object { $_.FullName.EndsWith('.class', [StringComparison]::Ordinal) }) {
+            $Memory = New-Object IO.MemoryStream
+            $EntryStream = $Entry.Open()
+            try { $EntryStream.CopyTo($Memory) } finally { $EntryStream.Dispose() }
+            $EntryBytes = $Memory.ToArray()
+            $Memory.Dispose()
+
+            $EntryChanged = $false
+            foreach ($Replacement in $ReplacementsToApply) {
+                $Count = Replace-LauncherAsciiString -Bytes $EntryBytes -Find $Replacement.Find -Replace $Replacement.Replace
+                if ($Count -gt 0) {
+                    $Changed = $true
+                    $EntryChanged = $true
+                }
+                $EntryText = [Text.Encoding]::GetEncoding(28591).GetString($EntryBytes)
+                if ($Replacement.Replace -eq 'ParallelR' -and $EntryText.Contains($Replacement.Replace)) {
+                    $FoundAppDirectory = $true
+                }
+                if ($Replacement.Replace -eq 'suwayomi/parallel' -and $EntryText.Contains($Replacement.Replace)) {
+                    $FoundPreferenceNode = $true
+                }
+            }
+            if ($EntryChanged) {
+                $PatchedEntries[$Entry.FullName] = $EntryBytes
+            }
+        }
+        if (-not $FoundAppDirectory -or -not $FoundPreferenceNode) {
+            throw 'La version instalada del launcher no se pudo aislar de forma segura.'
+        }
+        if (-not $Changed) {
+            # The launcher was already made independent by an earlier patch run.
+            return
+        }
+
+        if (Test-Path -LiteralPath $TemporaryJar) {
+            Remove-Item -LiteralPath $TemporaryJar -Force
+        }
+        $OutputArchive = [IO.Compression.ZipFile]::Open($TemporaryJar, [IO.Compression.ZipArchiveMode]::Create)
+        try {
+            foreach ($SourceEntry in $Archive.Entries) {
+                $DestinationEntry = $OutputArchive.CreateEntry($SourceEntry.FullName, [IO.Compression.CompressionLevel]::Optimal)
+                $DestinationEntry.LastWriteTime = $SourceEntry.LastWriteTime
+                $DestinationStream = $DestinationEntry.Open()
+                try {
+                    if ($PatchedEntries.ContainsKey($SourceEntry.FullName)) {
+                        $EntryBytes = [byte[]]$PatchedEntries[$SourceEntry.FullName]
+                        $DestinationStream.Write($EntryBytes, 0, $EntryBytes.Length)
+                    } else {
+                        $SourceStream = $SourceEntry.Open()
+                        try { $SourceStream.CopyTo($DestinationStream) } finally { $SourceStream.Dispose() }
+                    }
+                } finally { $DestinationStream.Dispose() }
+            }
+        } finally { $OutputArchive.Dispose() }
+    } finally {
+        $Archive.Dispose()
+    }
+
+    try {
+        Move-Item -LiteralPath $TemporaryJar -Destination $LauncherJar -Force
+    } finally {
+        if (Test-Path -LiteralPath $TemporaryJar) {
+            Remove-Item -LiteralPath $TemporaryJar -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
-if (-not (Test-LocalPort `$port)) {
-    `$arguments = '-Dsuwayomi.tachidesk.config.server.rootDir="{0}" -jar "{1}"' -f `$dataRoot, `$serverJar
-    Start-Process -FilePath `$java -ArgumentList `$arguments -WorkingDirectory `$serverRoot -WindowStyle Hidden
-    for (`$attempt = 0; `$attempt -lt 80 -and -not (Test-LocalPort `$port); `$attempt += 1) { Start-Sleep -Milliseconds 250 }
+
+function Set-ParallelReaderLauncherDataRoot {
+    param([Parameter(Mandatory = $true)][string]$Root)
+
+    # The patched graphical launcher stores its defaults under LocalAppData\ParallelR.
+    # A junction keeps that internal location bound to the independent data directory.
+    $LauncherDataRoot = Join-Path $env:LOCALAPPDATA 'ParallelR'
+    if ($LauncherDataRoot.Equals($Root, [StringComparison]::OrdinalIgnoreCase)) {
+        return
+    }
+
+    if (Test-Path -LiteralPath $LauncherDataRoot) {
+        $ExistingItem = Get-Item -LiteralPath $LauncherDataRoot -Force
+        if (($ExistingItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            $Target = @($ExistingItem.Target)[0]
+            if (-not [string]::IsNullOrWhiteSpace($Target) -and
+                ([IO.Path]::GetFullPath($Target).TrimEnd('\') -eq $Root.TrimEnd('\'))) {
+                return
+            }
+            throw "La ruta interna del launcher ya apunta a otro directorio: $LauncherDataRoot"
+        }
+        if ((Get-ChildItem -LiteralPath $LauncherDataRoot -Force | Measure-Object).Count -ne 0) {
+            throw "No se puede aislar el launcher porque esta ruta ya contiene datos ajenos: $LauncherDataRoot"
+        }
+        Remove-Item -LiteralPath $LauncherDataRoot -Force
+    }
+
+    [void](New-Item -ItemType Junction -Path $LauncherDataRoot -Target $Root)
 }
-if (Test-LocalPort `$port) {
-    Start-Process "http://127.0.0.1:`$port/"
-} else {
-    Add-Type -AssemblyName PresentationFramework
-    [void][System.Windows.MessageBox]::Show('Suwayomi Parallel Reader no pudo iniciar. Ejecuta el parche de nuevo o consulta server.log en su carpeta de datos.', 'Suwayomi Parallel Reader')
-}
-"@
-    [IO.File]::WriteAllText($LauncherPath, $Launcher, (New-Object Text.UTF8Encoding($false)))
+
+function Get-ParallelReaderGraphicalLauncher {
+    param([Parameter(Mandatory = $true)][string]$ServerRoot)
+
+    $Java = Join-Path $ServerRoot 'jre\bin\javaw.exe'
+    if (-not (Test-Path -LiteralPath $Java -PathType Leaf)) {
+        $Java = Join-Path $ServerRoot 'jre\bin\java.exe'
+    }
+    $LauncherJar = Join-Path $ServerRoot 'Suwayomi-Launcher.jar'
+    if (-not (Test-Path -LiteralPath $Java -PathType Leaf) -or -not (Test-Path -LiteralPath $LauncherJar -PathType Leaf)) {
+        throw 'No se encontro el launcher grafico de la instalacion independiente.'
+    }
+
+    return [PSCustomObject]@{
+        Java = $Java
+        Arguments = '--add-exports=java.desktop/sun.awt=ALL-UNNAMED -jar "{0}"' -f $LauncherJar
+    }
 }
 
 function New-ParallelReaderShortcut {
-    param([string]$Launcher)
+    param([Parameter(Mandatory = $true)][string]$ServerRoot)
 
-    $PowerShellPath = (Get-Command powershell.exe).Source
-    $Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $Launcher
+    $Launcher = Get-ParallelReaderGraphicalLauncher -ServerRoot $ServerRoot
     $CreateShortcut = {
         param([string]$ShortcutPath, [string]$Description)
 
@@ -352,9 +490,9 @@ function New-ParallelReaderShortcut {
         [void](New-Item -ItemType Directory -Path (Split-Path -Parent $ShortcutPath) -Force)
         $Shell = New-Object -ComObject WScript.Shell
         $Shortcut = $Shell.CreateShortcut($ShortcutPath)
-        $Shortcut.TargetPath = $PowerShellPath
-        $Shortcut.Arguments = $Arguments
-        $Shortcut.WorkingDirectory = $InstallRoot
+        $Shortcut.TargetPath = $Launcher.Java
+        $Shortcut.Arguments = $Launcher.Arguments
+        $Shortcut.WorkingDirectory = $ServerRoot
         $Shortcut.Description = $Description
         $Shortcut.Save()
     }
@@ -372,6 +510,13 @@ function New-ParallelReaderShortcut {
 try {
     $MsiPath = Join-Path $PSScriptRoot $MsiName
     $WebUiSource = Join-Path $PSScriptRoot 'webUI'
+    if (-not (Test-Path -LiteralPath (Join-Path $WebUiSource 'index.html') -PathType Leaf)) {
+        # In the source checkout, the built WebUI lives beside installer/.
+        $DevelopmentWebUi = Join-Path (Split-Path -Parent $PSScriptRoot) 'build'
+        if (Test-Path -LiteralPath (Join-Path $DevelopmentWebUi 'index.html') -PathType Leaf) {
+            $WebUiSource = $DevelopmentWebUi
+        }
+    }
 
     if (-not $SkipMsi) {
         Install-OfficialMsi -MsiPath $MsiPath
@@ -384,15 +529,20 @@ try {
     Install-CustomWebUi -Source $WebUiSource -DestinationRoot $DataRoot
     Set-ParallelReaderConfiguration -Root $DataRoot -ServerPort $Port
     Install-ParallelReaderNotices -Root $DataRoot
-    $LauncherPath = Join-Path $DataRoot 'Start-Suwayomi-ParallelReader.ps1'
-    Write-ParallelReaderLauncher -LauncherPath $LauncherPath -ServerRoot $InstallRoot -ServerDataRoot $DataRoot -ServerPort $Port
+    Update-ParallelReaderGraphicalLauncher -ServerRoot $InstallRoot
+    Set-ParallelReaderLauncherDataRoot -Root $DataRoot
+    $LegacyLauncherPath = Join-Path $DataRoot 'Start-Suwayomi-ParallelReader.ps1'
+    if (Test-Path -LiteralPath $LegacyLauncherPath -PathType Leaf) {
+        Remove-Item -LiteralPath $LegacyLauncherPath -Force
+    }
 
     if (-not $TestMode) {
-        New-ParallelReaderShortcut -Launcher $LauncherPath
+        New-ParallelReaderShortcut -ServerRoot $InstallRoot
     }
 
     if (-not $NoLaunch) {
-        Start-Process -FilePath (Get-Command powershell.exe).Source -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $LauncherPath)
+        $Launcher = Get-ParallelReaderGraphicalLauncher -ServerRoot $InstallRoot
+        Start-Process -FilePath $Launcher.Java -ArgumentList $Launcher.Arguments -WorkingDirectory $InstallRoot
         Show-InstallerMessage -Title 'Suwayomi Parallel Reader' -Text 'Instalacion independiente completada. El original conserva sus datos y usa el puerto 4567; Parallel Reader usa sus propios datos y el puerto 4568.'
     } else {
         Write-Host 'Instalacion independiente de Parallel Reader completada correctamente.'
