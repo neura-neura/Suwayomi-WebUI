@@ -40,7 +40,6 @@ import type {
     ParallelScrollSyncMode,
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { ParallelReaderPane } from '@/features/parallel-reader/components/ParallelReaderPane.tsx';
-import { LockstepMarkerEditor } from '@/features/parallel-reader/components/LockstepMarkerEditor.tsx';
 import { coerceIn } from '@/lib/HelperFunctions.ts';
 import { useParallelScrollSync } from '@/features/parallel-reader/hooks/useParallelScrollSync.ts';
 import { PageAnchorEditor } from '@/features/parallel-reader/components/PageAnchorEditor.tsx';
@@ -62,6 +61,8 @@ type ParallelReaderWorkspaceProps = {
     onSwap: () => void;
 };
 
+type LockstepMarkerStage = 'start' | 'end';
+
 export const ParallelReaderWorkspace = ({
     leftSelection,
     rightSelection,
@@ -76,8 +77,8 @@ export const ParallelReaderWorkspace = ({
     const leftPageElementsRef = useRef<(HTMLElement | null)[]>([]);
     const rightPageElementsRef = useRef<(HTMLElement | null)[]>([]);
     const syncBeforeAdjustmentRef = useRef(true);
-    const lockstepCalibratedBeforeEditingRef = useRef(false);
-    const lockstepMarkersBeforeEditingRef = useRef<ParallelLockstepMarkers | undefined>(undefined);
+    const lockstepCalibratedBeforeAdjustmentRef = useRef(false);
+    const lockstepMarkersBeforeAdjustmentRef = useRef<ParallelLockstepMarkers | undefined>(undefined);
     const wasResizingRef = useRef(false);
     const controlsHideTimeoutRef = useRef<number | undefined>(undefined);
     const alignmentKey = getParallelReaderAlignmentKey(leftSelection, rightSelection);
@@ -117,7 +118,7 @@ export const ParallelReaderWorkspace = ({
     const [isAdjustingAlignment, setIsAdjustingAlignment] = useState(
         initialAlignmentRef.current.syncMode === 'lockstep' && !initialAlignmentRef.current.lockstepCalibrated,
     );
-    const [isMarkerEditorOpen, setIsMarkerEditorOpen] = useState(false);
+    const [lockstepMarkerStage, setLockstepMarkerStage] = useState<LockstepMarkerStage>('start');
     const [alignmentError, setAlignmentError] = useState(false);
     const [restoredSides, setRestoredSides] = useState(0);
     const [leftPosition, setLeftPosition] = useState<ParallelPagePosition>(initialAlignmentRef.current.leftPosition);
@@ -173,7 +174,7 @@ export const ParallelReaderWorkspace = ({
         setLeftWidth(alignment.leftWidth);
         setLockstepCalibrated(alignment.lockstepCalibrated);
         setLockstepMarkers(alignment.lockstepMarkers);
-        setIsMarkerEditorOpen(false);
+        setLockstepMarkerStage('start');
         setPercentageOffset(alignment.percentageOffset);
         setRightReaderSettings(alignment.rightReaderSettings);
         setRightPosition(alignment.rightPosition);
@@ -194,7 +195,7 @@ export const ParallelReaderWorkspace = ({
     }, [calibrateLockstep, isResizing, lockstepCalibrated, lockstepMarkers, syncMode]);
 
     useEffect(() => {
-        if (isMarkerEditorOpen) {
+        if (syncMode === 'lockstep' && isAdjustingAlignment) {
             return () => {};
         }
 
@@ -222,7 +223,7 @@ export const ParallelReaderWorkspace = ({
         alignmentKey,
         anchors,
         isSyncEnabled,
-        isMarkerEditorOpen,
+        isAdjustingAlignment,
         leftReaderSettings,
         leftPosition,
         leftWidth,
@@ -339,10 +340,35 @@ export const ParallelReaderWorkspace = ({
         setIsSyncEnabled(false);
     };
 
+    const startLockstepMarkerSelection = (preservePreviousMarkers = true) => {
+        syncBeforeAdjustmentRef.current = isSyncEnabled;
+        lockstepMarkersBeforeAdjustmentRef.current = preservePreviousMarkers ? lockstepMarkers : undefined;
+        lockstepCalibratedBeforeAdjustmentRef.current = preservePreviousMarkers && lockstepCalibrated;
+        setAlignmentError(false);
+        setIsAdjustingAlignment(true);
+        setIsSyncEnabled(false);
+        setLockstepCalibrated(false);
+        setLockstepMarkerStage('start');
+    };
+
     const cancelAlignmentAdjustment = () => {
         setAlignmentError(false);
         setIsAdjustingAlignment(false);
-        setIsSyncEnabled(syncMode === 'lockstep' && !lockstepCalibrated ? false : syncBeforeAdjustmentRef.current);
+        if (syncMode !== 'lockstep') {
+            setIsSyncEnabled(syncBeforeAdjustmentRef.current);
+            return;
+        }
+
+        const previousMarkers = lockstepMarkersBeforeAdjustmentRef.current;
+        const shouldRestoreCalibration = lockstepCalibratedBeforeAdjustmentRef.current && Boolean(previousMarkers);
+        setLockstepMarkers(previousMarkers);
+        setLockstepMarkerStage('start');
+        if (shouldRestoreCalibration && previousMarkers) {
+            calibrateLockstep(previousMarkers);
+        } else {
+            setLockstepCalibrated(false);
+        }
+        setIsSyncEnabled(shouldRestoreCalibration ? syncBeforeAdjustmentRef.current : false);
     };
 
     const useCurrentPositions = () => {
@@ -368,19 +394,37 @@ export const ParallelReaderWorkspace = ({
                     getScrollProgress(leftScrollRef.current.scrollTop, getScrollableHeight(leftScrollRef.current)),
             );
         } else {
-            lockstepMarkersBeforeEditingRef.current = lockstepMarkers;
-            lockstepCalibratedBeforeEditingRef.current = false;
-            setLockstepMarkers({
-                start: { left: leftPosition, right: rightPosition },
-                end: lockstepMarkers?.end ?? {
-                    left: { pageIndex: leftSelection.chapter.pageCount - 1, progress: 1 },
-                    right: { pageIndex: rightSelection.chapter.pageCount - 1, progress: 1 },
-                },
-            });
-            setLockstepCalibrated(false);
+            if (lockstepMarkerStage === 'start') {
+                setLockstepMarkers({
+                    start: { left: leftPosition, right: rightPosition },
+                    end: lockstepMarkers?.end ?? {
+                        left: { pageIndex: leftSelection.chapter.pageCount - 1, progress: 1 },
+                        right: { pageIndex: rightSelection.chapter.pageCount - 1, progress: 1 },
+                    },
+                });
+                setLockstepMarkerStage('end');
+                setAlignmentError(false);
+                return;
+            }
+
+            if (!lockstepMarkers) {
+                return;
+            }
+
+            const nextMarkers: ParallelLockstepMarkers = {
+                start: lockstepMarkers.start,
+                end: { left: leftPosition, right: rightPosition },
+            };
+            if (!calibrateLockstep(nextMarkers)) {
+                setAlignmentError(true);
+                return;
+            }
+
+            setLockstepMarkers(nextMarkers);
+            setLockstepMarkerStage('start');
             setAlignmentError(false);
             setIsAdjustingAlignment(false);
-            setIsMarkerEditorOpen(true);
+            setIsSyncEnabled(true);
             return;
         }
 
@@ -389,72 +433,9 @@ export const ParallelReaderWorkspace = ({
         setIsSyncEnabled(true);
     };
 
-    const updateLockstepMarker = (
-        marker: 'start' | 'end',
-        side: ParallelReaderSide,
-        position: ParallelPagePosition,
-    ) => {
-        setLockstepMarkers((currentMarkers) =>
-            currentMarkers
-                ? {
-                      ...currentMarkers,
-                      [marker]: { ...currentMarkers[marker], [side]: position },
-                  }
-                : currentMarkers,
-        );
-    };
-
-    const openMarkerEditor = () => {
-        if (!lockstepMarkers) {
-            startAlignmentAdjustment();
-            return;
-        }
-
-        lockstepMarkersBeforeEditingRef.current = lockstepMarkers;
-        lockstepCalibratedBeforeEditingRef.current = lockstepCalibrated;
-        syncBeforeAdjustmentRef.current = isSyncEnabled;
-        setAlignmentError(false);
-        setIsSyncEnabled(false);
-        setLockstepCalibrated(false);
-        setIsMarkerEditorOpen(true);
-    };
-
-    const cancelMarkerEditor = () => {
-        const previousMarkers = lockstepMarkersBeforeEditingRef.current;
-        const shouldRestoreCalibration = lockstepCalibratedBeforeEditingRef.current && Boolean(previousMarkers);
-        setLockstepMarkers(previousMarkers);
-        setAlignmentError(false);
-        setIsMarkerEditorOpen(false);
-        if (shouldRestoreCalibration && previousMarkers) {
-            calibrateLockstep(previousMarkers);
-        } else {
-            setLockstepCalibrated(false);
-        }
-        setIsSyncEnabled(shouldRestoreCalibration ? syncBeforeAdjustmentRef.current : false);
-    };
-
-    const saveLockstepMarkers = () => {
-        if (!lockstepMarkers || !calibrateLockstep(lockstepMarkers)) {
-            setAlignmentError(true);
-            return;
-        }
-
-        if (leftScrollRef.current) {
-            scrollToPagePosition(leftScrollRef.current, leftPageElementsRef.current, lockstepMarkers.start.left);
-        }
-        if (rightScrollRef.current) {
-            scrollToPagePosition(rightScrollRef.current, rightPageElementsRef.current, lockstepMarkers.start.right);
-        }
-        setLeftPosition(lockstepMarkers.start.left);
-        setRightPosition(lockstepMarkers.start.right);
-        setAlignmentError(false);
-        setIsMarkerEditorOpen(false);
-        setIsSyncEnabled(true);
-    };
-
     const handleSyncToggle = (checked: boolean) => {
         if (checked && syncMode === 'lockstep' && !lockstepCalibrated) {
-            startAlignmentAdjustment();
+            startLockstepMarkerSelection();
             return;
         }
         setIsSyncEnabled(checked);
@@ -470,7 +451,7 @@ export const ParallelReaderWorkspace = ({
         if (nextMode === 'lockstep') {
             setLockstepCalibrated(false);
             setLockstepMarkers(undefined);
-            startAlignmentAdjustment();
+            startLockstepMarkerSelection(false);
         } else if (isAdjustingAlignment) {
             setIsAdjustingAlignment(false);
             setIsSyncEnabled(syncBeforeAdjustmentRef.current);
@@ -537,6 +518,11 @@ export const ParallelReaderWorkspace = ({
             showFullscreenControls();
         }
     };
+
+    let alignmentActionLabel = t`Use these positions`;
+    if (syncMode === 'lockstep') {
+        alignmentActionLabel = lockstepMarkerStage === 'start' ? t`Use this start` : t`Use this end`;
+    }
 
     return (
         <Stack
@@ -735,16 +721,20 @@ export const ParallelReaderWorkspace = ({
                                             {syncMode === 'percentage' &&
                                                 t`This saves the difference between the two current chapter positions.`}
                                             {syncMode === 'lockstep' &&
-                                                t`This saves the orange start marker. Next, a mini view opens from the bottom so you can place the green end marker.`}
+                                                (lockstepMarkerStage === 'start'
+                                                    ? t`First, align the beginning of the matching scene and save it. Then you will align the ending scene in these same readers.`
+                                                    : t`Now align the ending of the matching scene and save it. Both markers will be used to keep the content together.`)}
                                         </Typography>
                                         {alignmentError && (
                                             <Typography color="error">
-                                                {t`That page match conflicts with an existing match. Edit the page matches below and try again.`}
+                                                {syncMode === 'lockstep'
+                                                    ? t`The ending scene must be after the beginning in both readers.`
+                                                    : t`That page match conflicts with an existing match. Edit the page matches below and try again.`}
                                             </Typography>
                                         )}
                                         <Stack direction="row" spacing={1}>
                                             <Button onClick={useCurrentPositions} variant="contained">
-                                                {t`Use these positions`}
+                                                {alignmentActionLabel}
                                             </Button>
                                             <Button onClick={cancelAlignmentAdjustment}>{t`Cancel`}</Button>
                                         </Stack>
@@ -753,11 +743,15 @@ export const ParallelReaderWorkspace = ({
                             ) : (
                                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
                                     <Button
-                                        onClick={syncMode === 'lockstep' ? openMarkerEditor : startAlignmentAdjustment}
+                                        onClick={
+                                            syncMode === 'lockstep'
+                                                ? () => startLockstepMarkerSelection()
+                                                : startAlignmentAdjustment
+                                        }
                                         startIcon={<TuneIcon />}
                                         variant="contained"
                                     >
-                                        {syncMode === 'lockstep' ? t`Edit start and end markers` : t`Adjust alignment`}
+                                        {syncMode === 'lockstep' ? t`Set start and end positions` : t`Adjust alignment`}
                                     </Button>
                                     {syncMode !== 'lockstep' && (
                                         <>
@@ -851,18 +845,6 @@ export const ParallelReaderWorkspace = ({
                     />
                 </Box>
             </Box>
-            {lockstepMarkers && (
-                <LockstepMarkerEditor
-                    error={alignmentError}
-                    leftSelection={leftSelection}
-                    markers={lockstepMarkers}
-                    onCancel={cancelMarkerEditor}
-                    onMarkerChange={updateLockstepMarker}
-                    onSave={saveLockstepMarkers}
-                    open={isMarkerEditorOpen}
-                    rightSelection={rightSelection}
-                />
-            )}
         </Stack>
     );
 };
