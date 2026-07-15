@@ -610,7 +610,7 @@ export const ParallelReaderWorkspace = ({
                                             sx={{ fontWeight: 'medium' }}
                                         >{t`Same content movement`}</Typography>
                                         <Typography color="text.secondary" variant="caption">
-                                            {t`Keeps the same point in each page, even if image sizes differ`}
+                                            {t`Follows matching content despite different page counts or image sizes`}
                                         </Typography>
                                     </Stack>
                                 </ToggleButton>
@@ -627,7 +627,7 @@ export const ParallelReaderWorkspace = ({
                                             {syncMode === 'percentage' &&
                                                 t`This saves the difference between the two current chapter positions.`}
                                             {syncMode === 'lockstep' &&
-                                                t`From this point, both readers follow the same relative content. Different image resolutions will not cause drift.`}
+                                                t`From this point, both readers move through their remaining content at the same rate. Re-align whenever the scenes stop matching.`}
                                         </Typography>
                                         {alignmentError && (
                                             <Typography color="error">
