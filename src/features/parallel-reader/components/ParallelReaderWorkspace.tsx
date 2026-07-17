@@ -32,6 +32,7 @@ import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import type {
     PageAnchor,
+    ParallelLockstepMarkerName,
     ParallelLockstepMarkers,
     ParallelPagePosition,
     ParallelReaderPaneSettings,
@@ -62,6 +63,18 @@ type ParallelReaderWorkspaceProps = {
 };
 
 type LockstepMarkerStage = 'start' | 'end';
+
+const getMarkerCoordinate = ({ pageIndex, progress }: ParallelPagePosition): number => pageIndex + progress;
+
+const getPositionFromMarkerCoordinate = (coordinate: number, pageCount: number): ParallelPagePosition => {
+    const boundedCoordinate = coerceIn(coordinate, 0, pageCount);
+    if (boundedCoordinate === pageCount) {
+        return { pageIndex: pageCount - 1, progress: 1 };
+    }
+
+    const pageIndex = Math.floor(boundedCoordinate);
+    return { pageIndex, progress: boundedCoordinate - pageIndex };
+};
 
 export const ParallelReaderWorkspace = ({
     leftSelection,
@@ -333,6 +346,44 @@ export const ParallelReaderWorkspace = ({
         });
     };
 
+    const handleLockstepMarkerChange = useCallback(
+        (side: ParallelReaderSide, marker: ParallelLockstepMarkerName, position: ParallelPagePosition) => {
+            const pageCount = side === 'left' ? leftSelection.chapter.pageCount : rightSelection.chapter.pageCount;
+            setLockstepMarkers((currentMarkers) => {
+                if (!currentMarkers) {
+                    return currentMarkers;
+                }
+
+                const sideMarkers = { ...currentMarkers.start };
+                const endMarkers = { ...currentMarkers.end };
+                let nextPosition = position;
+                if (marker === 'start') {
+                    const endCoordinate = getMarkerCoordinate(endMarkers[side]);
+                    if (getMarkerCoordinate(nextPosition) >= endCoordinate) {
+                        nextPosition = getPositionFromMarkerCoordinate(
+                            endCoordinate - Math.min(0.001, endCoordinate / 2),
+                            pageCount,
+                        );
+                    }
+                    sideMarkers[side] = nextPosition;
+                } else {
+                    const startCoordinate = getMarkerCoordinate(sideMarkers[side]);
+                    if (getMarkerCoordinate(nextPosition) <= startCoordinate) {
+                        nextPosition = getPositionFromMarkerCoordinate(
+                            startCoordinate + Math.min(0.001, (pageCount - startCoordinate) / 2),
+                            pageCount,
+                        );
+                    }
+                    endMarkers[side] = nextPosition;
+                }
+
+                return { start: sideMarkers, end: endMarkers };
+            });
+            setAlignmentError(false);
+        },
+        [leftSelection.chapter.pageCount, rightSelection.chapter.pageCount],
+    );
+
     const startAlignmentAdjustment = () => {
         syncBeforeAdjustmentRef.current = isSyncEnabled;
         setAlignmentError(false);
@@ -404,6 +455,18 @@ export const ParallelReaderWorkspace = ({
                 });
                 setLockstepMarkerStage('end');
                 setAlignmentError(false);
+                const leftEndPosition = { pageIndex: leftSelection.chapter.pageCount - 1, progress: 0 };
+                const rightEndPosition = { pageIndex: rightSelection.chapter.pageCount - 1, progress: 0 };
+                requestAnimationFrame(() => {
+                    if (leftScrollRef.current) {
+                        scrollToPagePosition(leftScrollRef.current, leftPageElementsRef.current, leftEndPosition);
+                    }
+                    if (rightScrollRef.current) {
+                        scrollToPagePosition(rightScrollRef.current, rightPageElementsRef.current, rightEndPosition);
+                    }
+                    setLeftPosition(leftEndPosition);
+                    setRightPosition(rightEndPosition);
+                });
                 return;
             }
 
@@ -523,6 +586,9 @@ export const ParallelReaderWorkspace = ({
     if (syncMode === 'lockstep') {
         alignmentActionLabel = lockstepMarkerStage === 'start' ? t`Use this start` : t`Use this end`;
     }
+    const isSelectingLockstepEnd = syncMode === 'lockstep' && lockstepMarkerStage === 'end';
+    const alignmentGuideColor = isSelectingLockstepEnd ? 'success' : 'warning';
+    const alignmentGuideLabel = isSelectingLockstepEnd ? t`Align this ending scene` : t`Align this scene`;
 
     return (
         <Stack
@@ -722,8 +788,8 @@ export const ParallelReaderWorkspace = ({
                                                 t`This saves the difference between the two current chapter positions.`}
                                             {syncMode === 'lockstep' &&
                                                 (lockstepMarkerStage === 'start'
-                                                    ? t`First, align the beginning of the matching scene and save it. Then you will align the ending scene in these same readers.`
-                                                    : t`Now align the ending of the matching scene and save it. Both markers will be used to keep the content together.`)}
+                                                    ? t`First, align the beginning of the matching scene and save it. The readers will then move to their last pages so you can align the ending scene.`
+                                                    : t`Now align the ending of the matching scene and save it. The orange start and green end markers can also be dragged directly in either reader.`)}
                                         </Typography>
                                         {alignmentError && (
                                             <Typography color="error">
@@ -799,13 +865,23 @@ export const ParallelReaderWorkspace = ({
                     }}
                 >
                     <ParallelReaderPane
+                        alignmentGuideColor={alignmentGuideColor}
+                        alignmentGuideLabel={alignmentGuideLabel}
                         readerLabel={t`Reader A`}
                         onPositionRestored={() => setRestoredSides((value) => value | 1)}
                         onScroll={handleLeftScroll}
                         pageElementsRef={leftPageElementsRef}
                         initialPosition={leftPosition}
                         isAutoScrollActive={activeAutoScrollSide === 'left'}
+                        lockstepMarkerPositions={
+                            lockstepMarkers
+                                ? { start: lockstepMarkers.start.left, end: lockstepMarkers.end.left }
+                                : undefined
+                        }
                         onAutoScrollActiveChange={(isActive) => handleAutoScrollActiveChange('left', isActive)}
+                        onLockstepMarkerChange={(marker, position) =>
+                            handleLockstepMarkerChange('left', marker, position)
+                        }
                         scrollRef={leftScrollRef}
                         selection={leftSelection}
                         settings={leftReaderSettings}
@@ -830,13 +906,23 @@ export const ParallelReaderWorkspace = ({
                         }}
                     />
                     <ParallelReaderPane
+                        alignmentGuideColor={alignmentGuideColor}
+                        alignmentGuideLabel={alignmentGuideLabel}
                         readerLabel={t`Reader B`}
                         onPositionRestored={() => setRestoredSides((value) => value | 2)}
                         onScroll={handleRightScroll}
                         pageElementsRef={rightPageElementsRef}
                         initialPosition={rightPosition}
                         isAutoScrollActive={activeAutoScrollSide === 'right'}
+                        lockstepMarkerPositions={
+                            lockstepMarkers
+                                ? { start: lockstepMarkers.start.right, end: lockstepMarkers.end.right }
+                                : undefined
+                        }
                         onAutoScrollActiveChange={(isActive) => handleAutoScrollActiveChange('right', isActive)}
+                        onLockstepMarkerChange={(marker, position) =>
+                            handleLockstepMarkerChange('right', marker, position)
+                        }
                         scrollRef={rightScrollRef}
                         selection={rightSelection}
                         settings={rightReaderSettings}

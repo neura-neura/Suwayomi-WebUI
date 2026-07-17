@@ -15,9 +15,13 @@ import type {
     ParallelReaderSide,
     ParallelScrollSyncMode,
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
-import { scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
-import { mapPagePosition, mapPositionBetweenMarkers } from '@/features/parallel-reader/utils/PageMapping.ts';
-import { getPercentageTargetTop, getScrollableHeight } from '@/features/parallel-reader/utils/ScrollSync.ts';
+import { getScrollTopForPagePosition, scrollToPagePosition } from '@/features/parallel-reader/utils/PageVisibility.ts';
+import { mapPagePosition } from '@/features/parallel-reader/utils/PageMapping.ts';
+import {
+    getContentMarkerTargetTop,
+    getPercentageTargetTop,
+    getScrollableHeight,
+} from '@/features/parallel-reader/utils/ScrollSync.ts';
 
 export const useParallelScrollSync = (
     leftRef: RefObject<HTMLElement | null>,
@@ -134,28 +138,42 @@ export const useParallelScrollSync = (
                         break;
                     case 'lockstep': {
                         const markers = lockstepMarkersRef.current;
+                        if (!lockstepCalibrated || !markers || !sourcePages.length || !targetPages.length) {
+                            break;
+                        }
+
+                        const sourceStartTop = getScrollTopForPagePosition(
+                            source,
+                            sourcePages,
+                            markers.start[sourceSide],
+                        );
+                        const sourceEndTop = getScrollTopForPagePosition(source, sourcePages, markers.end[sourceSide]);
+                        const targetStartTop = getScrollTopForPagePosition(
+                            target,
+                            targetPages,
+                            markers.start[targetSide],
+                        );
+                        const targetEndTop = getScrollTopForPagePosition(target, targetPages, markers.end[targetSide]);
                         if (
-                            !lockstepCalibrated ||
-                            !markers ||
-                            !sourcePosition ||
-                            !sourcePages.length ||
-                            !targetPages.length
+                            sourceStartTop === undefined ||
+                            sourceEndTop === undefined ||
+                            targetStartTop === undefined ||
+                            targetEndTop === undefined
                         ) {
                             break;
                         }
 
-                        scrollTargetToPagePosition(
+                        writeTargetTop(
                             target,
                             targetSide,
-                            targetPages,
-                            mapPositionBetweenMarkers(
-                                sourcePosition,
-                                markers.start[sourceSide],
-                                markers.end[sourceSide],
-                                markers.start[targetSide],
-                                markers.end[targetSide],
-                                sourcePages.length,
-                                targetPages.length,
+                            getContentMarkerTargetTop(
+                                source.scrollTop,
+                                getScrollableHeight(source),
+                                sourceStartTop,
+                                sourceEndTop,
+                                getScrollableHeight(target),
+                                targetStartTop,
+                                targetEndTop,
                             ),
                         );
                         break;

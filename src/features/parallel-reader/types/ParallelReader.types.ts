@@ -38,10 +38,10 @@ export type ParallelPagePosition = {
 };
 
 export type ParallelReaderSide = 'left' | 'right';
+export type ParallelLockstepMarkerName = 'start' | 'end';
 
 export type ParallelLockstepMarkers = {
-    end: Record<ParallelReaderSide, ParallelPagePosition>;
-    start: Record<ParallelReaderSide, ParallelPagePosition>;
+    [marker in ParallelLockstepMarkerName]: Record<ParallelReaderSide, ParallelPagePosition>;
 };
 
 export type PageAnchor = {

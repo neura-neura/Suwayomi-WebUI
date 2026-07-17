@@ -15,16 +15,17 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { MutableRefObject, RefObject } from 'react';
+import type { MutableRefObject, PointerEvent, RefObject } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { SpinnerImage } from '@/base/components/SpinnerImage.tsx';
 import type {
+    ParallelLockstepMarkerName,
     ParallelPagePosition,
     ParallelReaderPaneSettings,
     ParallelReaderSideSelection,
 } from '@/features/parallel-reader/types/ParallelReader.types.ts';
 import { useParallelChapterPages } from '@/features/parallel-reader/hooks/useParallelChapterPages.ts';
-import { getErrorMessage } from '@/lib/HelperFunctions.ts';
+import { coerceIn, getErrorMessage } from '@/lib/HelperFunctions.ts';
 import {
     getVisiblePagePosition,
     PAGE_READING_POINT_RATIO,
@@ -36,9 +37,13 @@ import { useAutomaticScrolling } from '@/base/hooks/useAutomaticScrolling.ts';
 import { ReaderPageScaleMode, ReaderScrollAmount } from '@/features/reader/Reader.types.ts';
 
 type ParallelReaderPaneProps = {
+    alignmentGuideColor?: 'warning' | 'success';
+    alignmentGuideLabel?: string;
     initialPosition: ParallelPagePosition;
     isAutoScrollActive: boolean;
+    lockstepMarkerPositions?: Partial<Record<ParallelLockstepMarkerName, ParallelPagePosition>>;
     onAutoScrollActiveChange: (isActive: boolean) => void;
+    onLockstepMarkerChange?: (marker: ParallelLockstepMarkerName, position: ParallelPagePosition) => void;
     onPositionRestored?: () => void;
     onScroll: (position: ParallelPagePosition | undefined) => void;
     onSettingsChange: (settings: ParallelReaderPaneSettings) => void;
@@ -51,11 +56,46 @@ type ParallelReaderPaneProps = {
 };
 
 const PAGE_PRELOAD_RADIUS = 3;
+const LOCKSTEP_MARKER_STYLES: Record<ParallelLockstepMarkerName, { backgroundColor: string; color: string }> = {
+    start: { backgroundColor: 'warning.main', color: 'warning.contrastText' },
+    end: { backgroundColor: 'success.main', color: 'success.contrastText' },
+};
+
+const getPositionAtClientY = (
+    pageElements: (HTMLElement | null)[],
+    clientY: number,
+): ParallelPagePosition | undefined => {
+    const pages = pageElements
+        .map((element, pageIndex) => ({ element, pageIndex }))
+        .filter((page): page is { element: HTMLElement; pageIndex: number } => page.element !== null);
+    if (!pages.length) {
+        return undefined;
+    }
+
+    const [firstPage] = pages;
+    const lastPage = pages.at(-1)!;
+    const page =
+        pages.find(({ element }) => {
+            const bounds = element.getBoundingClientRect();
+            return bounds.top <= clientY && bounds.bottom >= clientY;
+        }) ??
+        (clientY < firstPage.element.getBoundingClientRect().top
+            ? firstPage
+            : (pages.find(({ element }) => element.getBoundingClientRect().top > clientY) ?? lastPage));
+    const bounds = page.element.getBoundingClientRect();
+    const progress = bounds.height ? coerceIn((clientY - bounds.top) / bounds.height, 0, 1) : 0;
+
+    return { pageIndex: page.pageIndex, progress };
+};
 
 export const ParallelReaderPane = ({
+    alignmentGuideColor = 'warning',
+    alignmentGuideLabel,
     initialPosition,
     isAutoScrollActive,
+    lockstepMarkerPositions,
     onAutoScrollActiveChange,
+    onLockstepMarkerChange,
     onPositionRestored,
     onScroll,
     onSettingsChange,
@@ -71,6 +111,7 @@ export const ParallelReaderPane = ({
     const { pages, loading, error, refetch } = useParallelChapterPages(chapter.id, source.id);
     const [currentPosition, setCurrentPosition] = useState<ParallelPagePosition>(initialPosition);
     const restoredSelectionIdRef = useRef<string | undefined>(undefined);
+    const draggingMarkerRef = useRef<ParallelLockstepMarkerName | undefined>(undefined);
     const selectionId = `${source.id}:${manga.id}:${chapter.id}`;
     const automaticScrolling = useAutomaticScrolling(
         scrollRef as MutableRefObject<HTMLElement | null>,
@@ -105,6 +146,43 @@ export const ParallelReaderPane = ({
     const handleScroll = useCallback(() => {
         onScroll(updateVisiblePosition());
     }, [onScroll, updateVisiblePosition]);
+
+    const updateMarkerFromPointer = useCallback(
+        (marker: ParallelLockstepMarkerName, clientY: number) => {
+            const position = getPositionAtClientY(pageElementsRef.current, clientY);
+            if (position) {
+                onLockstepMarkerChange?.(marker, position);
+            }
+        },
+        [onLockstepMarkerChange, pageElementsRef],
+    );
+
+    const handleMarkerPointerDown = (marker: ParallelLockstepMarkerName, event: PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        draggingMarkerRef.current = marker;
+        updateMarkerFromPointer(marker, event.clientY);
+    };
+
+    const handleMarkerPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+        const marker = draggingMarkerRef.current;
+        const scrollElement = scrollRef.current;
+        if (!marker || !scrollElement) {
+            return;
+        }
+
+        const bounds = scrollElement.getBoundingClientRect();
+        if (event.clientY < bounds.top + 36) {
+            scrollElement.scrollBy({ top: -20 });
+        } else if (event.clientY > bounds.bottom - 36) {
+            scrollElement.scrollBy({ top: 20 });
+        }
+        updateMarkerFromPointer(marker, event.clientY);
+    };
+
+    const stopMarkerDragging = () => {
+        draggingMarkerRef.current = undefined;
+    };
 
     const goToPage = useCallback(
         (pageIndex: number) => {
@@ -172,6 +250,9 @@ export const ParallelReaderPane = ({
             <Paper
                 ref={scrollRef}
                 component="section"
+                onPointerCancel={stopMarkerDragging}
+                onPointerMove={handleMarkerPointerMove}
+                onPointerUp={stopMarkerDragging}
                 onScroll={handleScroll}
                 tabIndex={0}
                 variant="outlined"
@@ -255,6 +336,7 @@ export const ParallelReaderPane = ({
                                 display: 'grid',
                                 minHeight: settings.readingMode === 'single' ? 'calc(100dvh - 230px)' : 0,
                                 placeItems: 'center',
+                                position: 'relative',
                                 scrollSnapAlign: settings.readingMode === 'single' ? 'start' : undefined,
                                 width: '100%',
                             }}
@@ -272,6 +354,59 @@ export const ParallelReaderPane = ({
                                 imgStyle={pageImageStyle}
                                 hideImgStyle={{ minHeight: 0 }}
                             />
+                            {(Object.keys(LOCKSTEP_MARKER_STYLES) as ParallelLockstepMarkerName[]).map((marker) => {
+                                const markerPosition = lockstepMarkerPositions?.[marker];
+                                if (!markerPosition || markerPosition.pageIndex !== index) {
+                                    return null;
+                                }
+
+                                return (
+                                    <Box
+                                        aria-label={
+                                            marker === 'start'
+                                                ? t`Start marker. Drag to change its position.`
+                                                : t`End marker. Drag to change its position.`
+                                        }
+                                        key={marker}
+                                        onPointerDown={(event: PointerEvent<HTMLDivElement>) =>
+                                            handleMarkerPointerDown(marker, event)
+                                        }
+                                        role="button"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: `${markerPosition.progress * 100}%`,
+                                            right: 0,
+                                            left: 0,
+                                            zIndex: 2,
+                                            cursor: 'ns-resize',
+                                            touchAction: 'none',
+                                            transform: 'translateY(-50%)',
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                borderTop: 3,
+                                                borderColor: LOCKSTEP_MARKER_STYLES[marker].backgroundColor,
+                                            }}
+                                        />
+                                        <Typography
+                                            component="span"
+                                            sx={{
+                                                display: 'inline-block',
+                                                px: 0.75,
+                                                py: 0.25,
+                                                borderRadius: 1,
+                                                bgcolor: LOCKSTEP_MARKER_STYLES[marker].backgroundColor,
+                                                color: LOCKSTEP_MARKER_STYLES[marker].color,
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            {marker === 'start' ? t`Start` : t`End`}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
                         </Box>
                     ))}
                 </Stack>
@@ -286,7 +421,7 @@ export const ParallelReaderPane = ({
                         left: 0,
                         zIndex: 3,
                         borderTop: 2,
-                        borderColor: 'warning.main',
+                        borderColor: `${alignmentGuideColor}.main`,
                         pointerEvents: 'none',
                     }}
                 >
@@ -299,13 +434,13 @@ export const ParallelReaderPane = ({
                             px: 1,
                             py: 0.25,
                             borderRadius: '0 0 4px 4px',
-                            bgcolor: 'warning.main',
-                            color: 'warning.contrastText',
+                            bgcolor: `${alignmentGuideColor}.main`,
+                            color: `${alignmentGuideColor}.contrastText`,
                             fontSize: '0.75rem',
                             fontWeight: 600,
                         }}
                     >
-                        {t`Align this scene`}
+                        {alignmentGuideLabel ?? t`Align this scene`}
                     </Typography>
                 </Box>
             )}

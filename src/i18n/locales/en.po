@@ -450,7 +450,12 @@ msgstr "Align from Reader A"
 msgid "Align from Reader B"
 msgstr "Align from Reader B"
 
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
+msgid "Align this ending scene"
+msgstr "Align this ending scene"
+
 #: src/features/parallel-reader/components/ParallelReaderPane.tsx
+#: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
 msgid "Align this scene"
 msgstr "Align this scene"
 
@@ -1650,6 +1655,14 @@ msgstr "Enable page read progress"
 msgid "Enable the WebView via CEF (Chromium)"
 msgstr "Enable the WebView via CEF (Chromium)"
 
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
+msgid "End"
+msgstr "End"
+
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
+msgid "End marker. Drag to change its position."
+msgstr "End marker. Drag to change its position."
+
 #: src/features/downloads/screens/DownloadSettings.tsx
 msgid "Entries in excluded categories will not be downloaded even if they are also in included categories"
 msgstr "Entries in excluded categories will not be downloaded even if they are also in included categories"
@@ -1857,8 +1870,8 @@ msgid "Finished:"
 msgstr "Finished:"
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "First, align the beginning of the matching scene and save it. Then you will align the ending scene in these same readers."
-msgstr "First, align the beginning of the matching scene and save it. Then you will align the ending scene in these same readers."
+msgid "First, align the beginning of the matching scene and save it. The readers will then move to their last pages so you can align the ending scene."
+msgstr "First, align the beginning of the matching scene and save it. The readers will then move to their last pages so you can align the ending scene."
 
 #: src/features/parallel-reader/components/ParallelReaderPaneControls.tsx
 #: src/features/reader/settings/ReaderSettings.constants.tsx
@@ -2787,8 +2800,8 @@ msgid "Novel"
 msgstr "Novel"
 
 #: src/features/parallel-reader/components/ParallelReaderWorkspace.tsx
-msgid "Now align the ending of the matching scene and save it. Both markers will be used to keep the content together."
-msgstr "Now align the ending of the matching scene and save it. Both markers will be used to keep the content together."
+msgid "Now align the ending of the matching scene and save it. The orange start and green end markers can also be dragged directly in either reader."
+msgstr "Now align the ending of the matching scene and save it. The orange start and green end markers can also be dragged directly in either reader."
 
 #: src/features/browse/screens/BrowseSettings.tsx
 msgid "NSFW (18+) sources"
@@ -3773,6 +3786,7 @@ msgstr "Standard"
 
 #: src/features/downloads/screens/DownloadQueue.tsx
 #: src/features/manga/components/ResumeFAB.tsx
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
 msgid "Start"
 msgstr "Start"
 
@@ -3783,6 +3797,10 @@ msgstr "Start auto scroll"
 #: src/features/tracker/components/cards/TrackerActiveCard.tsx
 msgid "Start date"
 msgstr "Start date"
+
+#: src/features/parallel-reader/components/ParallelReaderPane.tsx
+msgid "Start marker. Drag to change its position."
+msgstr "Start marker. Drag to change its position."
 
 #: src/features/migration/screens/MigrationSearch.tsx
 msgid "Start migration"

@@ -37,14 +37,14 @@ export const getVisiblePagePosition = (
     return { pageIndex: finalPage.pageIndex, progress };
 };
 
-export const scrollToPagePosition = (
+export const getScrollTopForPagePosition = (
     scrollElement: HTMLElement,
     pageElements: (HTMLElement | null)[],
     position: ParallelPagePosition,
-): void => {
+): number | undefined => {
     const pageElement = pageElements[position.pageIndex];
     if (!pageElement) {
-        return;
+        return undefined;
     }
 
     const scrollBounds = scrollElement.getBoundingClientRect();
@@ -52,5 +52,19 @@ export const scrollToPagePosition = (
     const readingPoint = scrollBounds.top + scrollElement.clientHeight * PAGE_READING_POINT_RATIO;
     const pagePoint = pageBounds.top + pageBounds.height * coerceIn(position.progress, 0, 1);
 
-    scrollElement.scrollTo({ top: scrollElement.scrollTop + pagePoint - readingPoint });
+    const scrollableHeight = Math.max(0, scrollElement.scrollHeight - scrollElement.clientHeight);
+    return coerceIn(scrollElement.scrollTop + pagePoint - readingPoint, 0, scrollableHeight);
+};
+
+export const scrollToPagePosition = (
+    scrollElement: HTMLElement,
+    pageElements: (HTMLElement | null)[],
+    position: ParallelPagePosition,
+): void => {
+    const targetTop = getScrollTopForPagePosition(scrollElement, pageElements, position);
+    if (targetTop === undefined) {
+        return;
+    }
+
+    scrollElement.scrollTo({ top: targetTop });
 };
