@@ -874,7 +874,7 @@ export const ParallelReaderWorkspace = ({
                         initialPosition={leftPosition}
                         isAutoScrollActive={activeAutoScrollSide === 'left'}
                         lockstepMarkerPositions={
-                            lockstepMarkers
+                            lockstepMarkers && !isAdjustingAlignment
                                 ? { start: lockstepMarkers.start.left, end: lockstepMarkers.end.left }
                                 : undefined
                         }
@@ -915,7 +915,7 @@ export const ParallelReaderWorkspace = ({
                         initialPosition={rightPosition}
                         isAutoScrollActive={activeAutoScrollSide === 'right'}
                         lockstepMarkerPositions={
-                            lockstepMarkers
+                            lockstepMarkers && !isAdjustingAlignment
                                 ? { start: lockstepMarkers.start.right, end: lockstepMarkers.end.right }
                                 : undefined
                         }
